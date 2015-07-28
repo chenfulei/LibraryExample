@@ -1,13 +1,22 @@
 package com.library.callback;
 
 import android.app.Activity;
+import android.app.Dialog;
+import android.view.View;
 
 import com.library.constants.FLConstants;
+import com.library.utils.Debug;
 
+import org.apache.http.HttpHost;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.xmlpull.v1.XmlPullParser;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -38,7 +47,14 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
     protected Map<String, String> cookies; // cookie参数
 
     private Transformer transformer;
+    protected T result;
+
+    private int policy = FLConstants.CACHE_DEFAULT;
+    private File cacheDir;
+    private File targetFile;
     protected AccountHandle ah;
+
+    protected AjaxStatus status;
 
     protected boolean fileCache; //是否文件缓存
     protected boolean memCache; //
@@ -231,9 +247,324 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
         return self();
     }
 
+    /**
+     * 设置是否文件缓存
+     * Set ajax request to be file cached.
+     *
+     * @param cache
+     * @return
+     */
+    public K fileCache(boolean cache){
+        this.fileCache = cache;
+        return self();
+    }
 
+    /**
+     * Indicate ajax request to be memcached. Note: The default ajax handler does not supply a memcache.
+     * Subclasses such as BitmapAjaxCallback can provide their own memcache.
+     *
+     * @param cache the cache
+     * @return self
+     */
+    public K memCache(boolean cache){
+        this.memCache = cache;
+        return self();
+    }
 
+    public K policy(int policy){
+        this.policy = policy;
+        return self();
+    }
 
+    /**
+     * 表明ajax请求应该使用回调的主ui线程。默认是true
+     * Indicate the ajax request should use the main ui thread for callback. Default is true.
+     * @param refresh
+     * @return
+     */
+    public K refresh(boolean refresh){
+        this.refresh = refresh;
+        return self();
+    }
+
+    /**
+     * Indicate the ajax request should use the main ui thread for callback. Default is true.
+     *
+     * @param uiCallback use the main ui thread for callback
+     * @return self
+     */
+    public K uiCallback(boolean uiCallback){
+        this.uiCallback = uiCallback;
+        return self();
+    }
+
+    /**
+     * The expire duation for filecache. If a cached copy will be served if a cached file exists within current time minus expire duration.
+     *
+     * @param expire the expire
+     * @return self
+     */
+    public K expire(long expire){
+        this.expire = expire;
+        return self();
+    }
+
+    /**
+     * 设置请求头字段
+     * Set the header fields for the http request.
+     * @param name
+     * @param value
+     * @return
+     */
+    public K header(String name, String value){
+        if(headers == null){
+            headers = new HashMap<String, String>();
+        }
+        headers.put(name, value);
+        return self();
+    }
+
+    /**
+     * Set the header fields for the http request.
+     *
+     * @param headers the header
+     * @return self
+     */
+
+    public K headers(Map<String, String> headers){
+        this.headers = (Map<String, String>) headers;
+        return self();
+    }
+
+    /**
+     * Set the cookies for the http request.
+     *
+     * @param name the name
+     * @param value the value
+     * @return self
+     */
+    public K cookie(String name, String value){
+        if(cookies == null){
+            cookies = new HashMap<String, String>();
+        }
+        cookies.put(name, value);
+        return self();
+    }
+
+    /**
+     * 设置http request cookies
+     * @param cookies
+     * @return
+     */
+    public K cookies(Map<String, String> cookies){
+        this.cookies = (Map<String, String>) cookies;
+        return self();
+    }
+
+    /**
+     * 设置http request 的字符集
+     * 默认是：utf-8
+     * @param encoding
+     * @return
+     */
+    public K encoding(String encoding){
+        this.encoding = encoding;
+        return self();
+    }
+
+    private HttpHost proxy;
+    public K proxy(String host, int port){
+        proxy = new HttpHost(host, port);
+        return self();
+    }
+
+    public K proxy(String host, int port, String user, String password){
+
+        proxy(host, port);
+        String authHeader = makeAuthHeader(user, password);
+
+        Debug.Log("proxy auth", authHeader);
+
+        return header("Proxy-Authorization", authHeader);
+
+    }
+
+    private static String makeAuthHeader(String username, String password){
+
+        String cred = username + ":" + password;
+        byte[] data = cred.getBytes();
+
+        String auth = "Basic " + new String(AjaxUtility.encode64(data, 0, data.length));
+        return auth;
+    }
+
+    /**
+     * 目标文件
+     * @param file
+     * @return
+     */
+    public K targetFile(File file){
+        this.targetFile = file;
+        return self();
+    }
+
+    /**
+     * 设置参数
+     *  Set http POST params. If params are set, http POST method will be used.
+     * The UTF-8 encoded value.toString() will be sent with POST.
+     *
+     * Header field "Content-Type: application/x-www-form-urlencoded;charset=UTF-8" will be added if no Content-Type header field presents.
+     *
+     * @param name
+     * @param value
+     * @return
+     */
+    public K param(String name, Object value){
+        if(params == null){
+            params = new HashMap<String, Object>();
+        }
+        params.put(name, value);
+        return self();
+    }
+
+    /**
+     * Set the http POST params. See param(String name, Object value).
+     *
+     * @param params the params
+     * @return self
+     */
+    @SuppressWarnings("unchecked")
+    public K params(Map<String, ?> params){
+        this.params = (Map<String, Object>) params;
+        return self();
+    }
+
+    /**
+     * 设置加载滚动条
+     * Set the progress view (can be a progress bar or any view) to be shown (VISIBLE) and hide (GONE) depends on progress.
+     * @param view the progress view
+     * @return self
+     */
+    public K progress(View view){
+        return progress((Object) view);
+    }
+
+    /**
+     * 设置进度条
+     *
+     * Set the dialog to be shown and dismissed depends on progress.
+     * @param dialog
+     * @return self
+     */
+    public K progress(Dialog dialog){
+        return progress((Object) dialog);
+    }
+
+    /**
+     * 设置进度条
+     * @param progress
+     * @return
+     */
+    public K progress(Object progress){
+        if(progress != null){
+            this.progress = new WeakReference<Object>(progress);
+        }
+        return self();
+    }
+
+    //返回的对象类型
+    private static final Class<?>[] DEFAULT_SIG = {String.class, Object.class, AjaxStatus.class};
+    //是否完成
+    private boolean completed;
+
+    void callback(){
+
+    }
+
+    /**
+     * 唤醒所有锁
+     */
+    private void wake(){
+
+        if(!blocked) return;
+
+        synchronized(this){
+            try{
+                notifyAll();
+            }catch(Exception e){
+            }
+        }
+
+    }
+
+    private boolean blocked; //处理同步异步之间锁 唤醒和睡眠
+
+    /**
+     * 线程锁
+     * Block the current thread until the ajax call is completed. Returns immediately if ajax is already completed.
+     * Exception will be thrown if this method is called in main thread.
+     */
+    public void block(){
+
+        if(AjaxUtility.isUIThread()){
+            throw new IllegalStateException("Cannot block UI thread.");
+        }
+
+        if(completed) return;
+
+        try{
+            synchronized(this){
+                blocked = true;
+                //wait at most the network timeout plus 5 seconds, this guarantee thread will never be blocked forever
+                this.wait(NET_TIMEOUT + 5000);
+            }
+        }catch(Exception e){
+        }
+
+    }
+
+    /**
+     * The callback method to be overwritten for subclasses.
+     *
+     * @param url the url
+     * @param object the object
+     * @param status the status
+     */
+    public void callback(String url, T object, AjaxStatus status){
+
+    }
+
+    protected void skip(String url, T object, AjaxStatus status){
+
+    }
+
+//    protected T fileGet(String url, File file, AjaxStatus status){
+//
+//        try {
+//            byte[] data = null;
+//
+//            if(isStreamingContent()){
+//                status.file(file);
+//            }else{
+//                data = AQUtility.toBytes(new FileInputStream(file));
+//            }
+//
+//            return transform(url, data, status);
+//        } catch(Exception e) {
+//            Debug.Log(e);
+//            return null;
+//        }
+//    }
+
+    protected boolean isStreamingContent(){
+        return File.class.equals(type) || XmlPullParser.class.equals(type) || InputStream.class.equals(type) || XmlDom.class.equals(type);
+    }
+
+    protected T datastoreGet(String url){
+
+        return null;
+
+    }
 
     /**
      * 线程执行（内部使用）
