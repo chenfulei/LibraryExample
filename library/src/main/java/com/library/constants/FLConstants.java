@@ -7,8 +7,10 @@ package com.library.constants;
  */
 public class FLConstants {
 
+    //callback 请求中需要的常量
     public static final int METHOD_DETECT = 4;
     public static final int CACHE_DEFAULT = 0;
+    public static final int TAG_URL = 0x40FF0001; // url标记
 
 
     public static boolean isAnim = true; // 是否开启activity跳转动画
