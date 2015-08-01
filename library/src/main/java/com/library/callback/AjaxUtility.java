@@ -8,6 +8,7 @@ import android.os.Looper;
 
 import com.library.constants.FLConstants;
 import com.library.utils.Debug;
+import com.library.utils.FLDataUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -16,6 +17,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -247,6 +251,20 @@ public class AjaxUtility {
     }
 
     /**
+     * 同步保存数据到文件
+     * @param file
+     * @param data
+     * @param delay
+     */
+    public static void storeAsync(File file, byte[] data, long delay){
+
+        ScheduledExecutorService exe = getFileStoreExecutor();
+
+        Common task = new Common().method(Common.STORE_FILE, file, data);
+        exe.schedule(task, delay, TimeUnit.MILLISECONDS);
+    }
+
+    /**
      * 可以提供按照规定时间执行
      */
     private static ScheduledExecutorService storeExe;
@@ -406,9 +424,81 @@ public class AjaxUtility {
         }
     }
 
+    /**
+     * 创建空白缓存文件
+     * @param dir
+     * @param name
+     * @return
+     */
+    private static File makeCacheFile(File dir , String name){
+        return new File(dir , name);
+    }
+
+    /**
+     * 获取md5加密的缓存文件名称
+     * @param url
+     * @return
+     */
+    private static String getCacheFileName(String url){
+        return FLDataUtils.getMD5Hex(url);
+    }
+
+    /**
+     * 创建一个名称是用md5加密过的空白文件
+     * @param dir
+     * @param url
+     * @return
+     */
+    public static File getCacheFile(File dir , String url){
+        if (url == null) return null;
+        if (url.startsWith(File.separator)){
+            return new File(url);
+        }
+
+        String name = getCacheFileName(url);
+        return makeCacheFile(dir, name);
+    }
+
+    /**
+     * 获取根据url缓存的已存在文件
+     * @param dir
+     * @param url
+     * @return
+     */
+    public static File getExistedCacheByUrl(File dir , String url){
+        File file = getCacheFile(dir, url);
+        if (file == null || !file.exists() || file.length() == 0){
+            return  null;
+        }
+
+        return file;
+    }
+
+    /**
+     * 获取根据url缓存的已存在文件 并设置最后使用时间
+     * @param dir
+     * @param url
+     * @return
+     */
+    public static File getExistedCacheByUrlSetAccess(File dir , String url){
+        File file = getExistedCacheByUrl(dir, url);
+        if(file != null){
+            lastAccess(file);
+        }
+        return file;
+    }
+
+    /**
+     * 修改最后使用时间
+     * @param file
+     */
+    private static void lastAccess(File file){
+        long now = System.currentTimeMillis();
+        file.setLastModified(now);
+    }
+
     private static final int IO_BUFFER_SIZE = 1024 *4; // 最大速度
     private static final boolean TEST_IO_EXCEPTION = false ;//是否捕捉异常
-
     /**
      *将输入转换为输出 并设置进度条
      * @param inputStream
@@ -452,7 +542,6 @@ public class AjaxUtility {
         }
     }
 
-
     /**
      * 将inputStream 转换为bytes
      * @param inputStream
@@ -475,46 +564,4 @@ public class AjaxUtility {
 
         return result;
     }
-
-
-    /**********************生产 Base64 characters  start**************************/
-    private static final char[] map1 = new char[64];
-    static {
-        int i=0;
-        for (char c='A'; c<='Z'; c++) map1[i++] = c;
-        for (char c='a'; c<='z'; c++) map1[i++] = c;
-        for (char c='0'; c<='9'; c++) map1[i++] = c;
-        map1[i++] = '+'; map1[i++] = '/'; }
-
-    // Mapping table from Base64 characters to 6-bit nibbles.
-    private static final byte[] map2 = new byte[128];
-    static {
-        for (int i=0; i<map2.length; i++) map2[i] = -1;
-        for (int i=0; i<64; i++) map2[map1[i]] = (byte)i; }
-
-    //Source: http://www.source-code.biz/base64coder/java/Base64Coder.java.txt
-    public static char[] encode64(byte[] in, int iOff, int iLen) {
-
-        int oDataLen = (iLen*4+2)/3;       // output length without padding
-        int oLen = ((iLen+2)/3)*4;         // output length including padding
-        char[] out = new char[oLen];
-        int ip = iOff;
-        int iEnd = iOff + iLen;
-        int op = 0;
-        while (ip < iEnd) {
-            int i0 = in[ip++] & 0xff;
-            int i1 = ip < iEnd ? in[ip++] & 0xff : 0;
-            int i2 = ip < iEnd ? in[ip++] & 0xff : 0;
-            int o0 = i0 >>> 2;
-            int o1 = ((i0 &   3) << 4) | (i1 >>> 4);
-            int o2 = ((i1 & 0xf) << 2) | (i2 >>> 6);
-            int o3 = i2 & 0x3F;
-            out[op++] = map1[o0];
-            out[op++] = map1[o1];
-            out[op] = op < oDataLen ? map1[o2] : '='; op++;
-            out[op] = op < oDataLen ? map1[o3] : '='; op++; }
-        return out;
-    }
-/**********************生产 Base64 characters  end**************************/
-
 }
