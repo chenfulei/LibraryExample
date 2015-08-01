@@ -5,6 +5,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.util.Xml;
 import android.view.View;
 
@@ -12,25 +13,75 @@ import com.library.constants.FLConstants;
 import com.library.utils.Debug;
 import com.library.utils.FLDataUtils;
 
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.params.ClientPNames;
+import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.conn.HttpHostConnectException;
+import org.apache.http.conn.params.ConnManagerParams;
+import org.apache.http.conn.params.ConnPerRouteBean;
+import org.apache.http.conn.params.ConnRoutePNames;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.scheme.SocketFactory;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.CoreConnectionPNames;
+import org.apache.http.params.CoreProtocolPNames;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.ExecutionContext;
+import org.apache.http.protocol.HttpContext;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.xmlpull.v1.XmlPullParser;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 
 /**
  * ajax 回调处理程序核心类
@@ -46,6 +97,7 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
     private static boolean GZIP = true; // 默认数据打包
     private static boolean REUSE_CLIENT = true;
     private static boolean SIMULATE_ERROR = false; //模拟网络错误
+    private static int lastStatus = 200; // 最后网络请求的状态
 
     private Class<T> type; //返回的class
     private Reference<Object> whandler; //在java中指的是指针
@@ -84,8 +136,6 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
 
     private boolean uiCallback = true;
     private int retry = 0;
-
-
 
     /**
      * 获取自身对象
@@ -212,6 +262,52 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
     public K networkUrl(String url){
         this.networkUrl = url;
         return self();
+    }
+
+    /**
+     * Set the authentication type of this request. This method requires API 5+.
+     *
+     * @param act the current activity
+     * @param type the auth type
+     * @param account the account, such as someone@gmail.com
+     * @return self
+     */
+    public K auth(Activity act, String type, String account){
+
+        if(android.os.Build.VERSION.SDK_INT >= 5 && type.startsWith("g.")){
+            ah = new GoogleHandle(act, type, account);
+        }
+        return self();
+    }
+
+    /**
+     * Set the authentication account handle.
+     *
+     * @param handle the account handle
+     * @return self
+     */
+
+    public K auth(AccountHandle handle){
+        ah = handle;
+        return self();
+    }
+
+    /**
+     * Gets the url.
+     *
+     * @return the url
+     */
+    public String getUrl(){
+        return url;
+    }
+
+    /**
+     * Gets the callback method name.
+     *
+     * @return the callback
+     */
+    public String getCallback() {
+        return callback;
     }
 
     /**
@@ -570,6 +666,58 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
         return whandler.get();
     }
 
+    protected static int getLastStatus(){
+        return lastStatus;
+    }
+
+    /**
+     * Gets the result. Can be null if ajax is not completed or the ajax call failed.
+     * This method should only be used after the block() method.
+     *
+     * @return the result
+     */
+    public T getResult(){
+        return result;
+    }
+
+    /**
+     * Gets the ajax status.
+     * This method should only be used after the block() method.
+     *
+     * @return the status
+     */
+
+    public AjaxStatus getStatus(){
+        return status;
+    }
+
+    /**
+     * Gets the encoding. Default is UTF-8.
+     *
+     * @return the encoding
+     */
+    public String getEncoding(){
+        return encoding;
+    }
+
+    private boolean abort;
+
+    /**
+     * Abort the http request that will interrupt the network transfer.
+     * This method currently doesn't work with multi-part post.
+     *
+     * If no network transfer is involved (eg. response is file cached), this method has no effect.
+     *
+     */
+
+    public void abort(){
+        abort = true;
+
+        if(request != null && !request.isAborted()){
+            request.abort();
+        }
+    }
+
     /**
      * 判断activity是否注销
      * @return
@@ -660,9 +808,7 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
             skip(url, result, status);
         }
 
-
         filePut();
-
         if(!blocked){
             status.close();
         }
@@ -1094,6 +1240,51 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
     }
 
     /**
+     * 获取正在执行的线程数
+     *
+     *  Return the number of active ajax threads. Note that this doesn't necessarily correspond to active network connections.
+     * Ajax threads might be reading a cached url from file system or transforming the response after a network transfer.
+     * @return
+     */
+    public static int getActiveCount(){
+        int result = 0;
+        if(fetchExe instanceof ThreadPoolExecutor){
+            result = ((ThreadPoolExecutor) fetchExe).getActiveCount();
+        }
+
+        return result;
+    }
+
+    /**
+     * 设置线程池数 （最大显示25）
+     * Sets the simultaneous network threads limit. Highest limit is 25.
+     *
+     * @param limit the new network threads limit
+     */
+    public static void setNetworkLimit(int limit){
+
+        NETWORK_POOL = Math.max(1, Math.min(25, limit));
+        fetchExe = null;
+
+        Debug.Log("setting network limit", NETWORK_POOL + "");
+    }
+
+    /**
+     * 取消所有线程活动
+     * Cancel ALL ajax tasks.
+     *
+     * Warning: Do not call this method unless you are exiting an application.
+     */
+    public static void cancel(){
+
+        if(fetchExe != null){
+            fetchExe.shutdownNow();
+            fetchExe = null;
+        }
+        BitmapAjaxCallback.clearTasks();
+    }
+
+    /**
      * 线程执行（内部使用）
      */
     @Override
@@ -1203,7 +1394,718 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
      */
     private boolean reauth;
     private void networkWork(){
+        if(url == null){
+            status.code(AjaxStatus.NETWORK_ERROR).done();
+            return;
+        }
+        byte[] data = null;
+
+        try{
+            network(retry + 1);
+
+            if(ah != null && ah.expired(this, status) && !reauth){
+                Debug.Log("reauth needed:", status.getMessage());
+                reauth = true;
+                if(ah.reauth(this)){
+                    network();
+                }else{
+                    status.reauth(true);
+                    return;
+                }
+            }
+            data = status.getData();
+
+        }catch(IOException e){
+
+            Debug.LogE("IOException");
+
+            //work around for IOException when 401 is returned
+            //reference: http://stackoverflow.com/questions/11735636/how-to-get-401-response-without-handling-it-using-try-catch-in-android
+            String message = e.getMessage();
+            if(message != null && message.contains("No authentication challenges found")){
+                status.code(401).message(message);
+            }else{
+                status.code(AjaxStatus.NETWORK_ERROR).message("network error");
+            }
+
+        }catch(Exception e){
+            e.printStackTrace();
+            Debug.Log(e);
+            status.code(AjaxStatus.NETWORK_ERROR).message("network error");
+        }
+        try{
+            result = transform(url, data, status);
+        }catch(Exception e){
+           e.printStackTrace();
+            Debug.Log(e);
+        }
+        if(result == null && data != null){
+            status.code(AjaxStatus.TRANSFORM_ERROR).message("transform error");
+        }
+
+        lastStatus = status.getCode();
+        status.done();
+    }
+
+    //added retry logic
+    /**
+     * 网络请求 （递归方式）
+     * @param attempts
+     * @throws IOException
+     */
+    private void network(int attempts) throws IOException{
+        if(attempts <= 1){
+            network();
+            return;
+        }
+        for(int i = 0; i < attempts; i++){
+            try{
+                network();
+                return;
+            }catch(IOException e){
+                if(i == attempts - 1){
+                    throw e;
+                }
+            }
+        }
+    }
+    private void network() throws IOException{
+        String url = this.url;
+        Map<String, Object> params = this.params;
+
+        //convert get to post request, if url length is too long to be handled on web
+        if(params == null && url.length() > 2000){
+            Uri uri = Uri.parse(url);
+            url = extractUrl(uri);
+            params = extractParams(uri);
+        }
+
+        url = getNetworkUrl(url);
+
+        //不同请求方式
+        if(FLConstants.METHOD_DELETE == method){
+            httpDelete(url, status);
+        }else if(FLConstants.METHOD_PUT == method){
+            httpPut(url, params, status);
+        }else{
+            if(FLConstants.METHOD_POST == method && params == null){
+                params = new HashMap<String, Object>();
+            }
+            if(params == null){
+                httpGet(url, status);
+            }else{
+                if(isMultiPart(params)){
+                    httpMulti(url, params, status);
+                }else{
+                    httpPost(url, params, status);
+                }
+            }
+        }
+    }
+    private static String extractUrl(Uri uri){
+
+        String result = uri.getScheme() + "://" + uri.getAuthority() + uri.getPath();
+
+        String fragment = uri.getFragment();
+        if(fragment != null) result += "#" + fragment;
+
+        return result;
+    }
+    private static Map<String, Object> extractParams(Uri uri){
+
+        Map<String, Object> params = new HashMap<String, Object>();
+        String[] pairs = uri.getQuery().split("&");
+
+        for(String pair: pairs){
+            String[] split = pair.split("=");
+            if(split.length >= 2){
+                params.put(split[0], split[1]);
+            }else if(split.length == 1){
+                params.put(split[0], "");
+            }
+        }
+        return params;
+    }
+
+    private static String patchUrl(String url){
+        url = url.replaceAll(" ", "%20").replaceAll("\\|", "%7C");
+        return url;
+    }
+
+
+    private static ProxyHandle proxyHandle;
+    public static void setProxyHandle(ProxyHandle handle){
+        proxyHandle = handle;
+    }
+
+    private static SocketFactory ssf;
+    private static final String lineEnd = "\r\n";
+    private static final String twoHyphens = "--";
+    private static final String boundary = "*****";
+
+    private void httpGet(String url, AjaxStatus status) throws IOException{
+
+        Debug.Log("get", url);
+        url = patchUrl(url);
+
+        HttpGet get = new HttpGet(url);
+
+        httpDo(get, url, status);
+    }
+
+    private void httpDelete(String url, AjaxStatus status) throws IOException{
+
+        Debug.Log("get", url);
+        url = patchUrl(url);
+
+        HttpDelete del = new HttpDelete(url);
+
+        httpDo(del, url, status);
+    }
+
+    private void httpPost(String url, Map<String, Object> params, AjaxStatus status) throws ClientProtocolException, IOException{
+
+        Debug.Log("post", url);
+
+        HttpEntityEnclosingRequestBase req = new HttpPost(url);
+
+        httpEntity(url, req, params, status);
+    }
+
+    private void httpPut(String url, Map<String, Object> params, AjaxStatus status) throws ClientProtocolException, IOException{
+
+        Debug.Log("put", url);
+
+        HttpEntityEnclosingRequestBase req = new HttpPut(url);
+
+        httpEntity(url, req, params, status);
+    }
+
+    private void httpEntity(String url, HttpEntityEnclosingRequestBase req, Map<String, Object> params, AjaxStatus status) throws ClientProtocolException, IOException{
+
+        //This setting seems to improve post performance
+        //http://stackoverflow.com/questions/3046424/http-post-requests-using-httpclient-take-2-seconds-why
+        req.getParams().setBooleanParameter(CoreProtocolPNames.USE_EXPECT_CONTINUE, false);
+        HttpEntity entity = null;
+        Object value = params.get(FLConstants.POST_ENTITY);
+
+        if(value instanceof HttpEntity){
+            entity = (HttpEntity) value;
+        }else{
+            List<NameValuePair> pairs = new ArrayList<>();
+
+            for(Map.Entry<String, Object> e: params.entrySet()){
+                value = e.getValue();
+                if(value != null){
+                    pairs.add(new BasicNameValuePair(e.getKey(), value.toString()));
+                }
+            }
+
+            entity = new UrlEncodedFormEntity(pairs, "UTF-8");
+        }
+
+        if(headers != null  && !headers.containsKey("Content-Type")){
+            headers.put("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
+        }
+
+        req.setEntity(entity);
+        httpDo(req, url, status); // 执行
+    }
+
+    /**
+     * 网络请求核心部分
+     * @param hr
+     * @param url
+     * @param status
+     * @throws ClientProtocolException
+     * @throws IOException
+     */
+    private void httpDo(HttpUriRequest hr, String url, AjaxStatus status) throws ClientProtocolException, IOException{
+
+        DefaultHttpClient client = getClient();
+
+        if(proxyHandle != null){
+            proxyHandle.applyProxy(this, hr, client);
+        }
+
+        if(AGENT != null){
+            hr.addHeader("User-Agent", AGENT);
+        }else if(AGENT == null && GZIP){
+            hr.addHeader("User-Agent", "gzip");
+        }
+
+
+        if(headers != null){
+            for(String name: headers.keySet()){
+                hr.addHeader(name, headers.get(name));
+            }
+        }
+
+        if(GZIP && (headers == null || !headers.containsKey("Accept-Encoding"))){
+            hr.addHeader("Accept-Encoding", "gzip");
+        }
+
+        if(ah != null){
+            ah.applyToken(this, hr);
+        }
+
+        String cookie = makeCookie();
+        if(cookie != null){
+            hr.addHeader("Cookie", cookie);
+        }
+
+        HttpParams hp = hr.getParams();
+        if(proxy != null) hp.setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
+
+
+        if(timeout > 0){
+            hp.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, timeout);
+            hp.setParameter(CoreConnectionPNames.SO_TIMEOUT, timeout);
+        }
+
+        if(!redirect){
+            hp.setBooleanParameter(ClientPNames.HANDLE_REDIRECTS, false);
+        }
+
+        HttpContext context = new BasicHttpContext();
+        CookieStore cookieStore = new BasicCookieStore();
+        context.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
+
+        request = hr;
+
+        if(abort){
+            throw new IOException("Aborted");
+        }
+
+        if(SIMULATE_ERROR){
+            throw new IOException("Simulated Error");
+        }
+
+        HttpResponse response = null;
+
+        try{
+            //response = client.execute(hr, context);
+            response = execute(hr, client, context);
+        }catch(HttpHostConnectException e){
+
+            //if proxy is used, automatically retry without proxy
+            if(proxy != null){
+                Debug.LogE("proxy failed, retrying without proxy");
+                hp.setParameter(ConnRoutePNames.DEFAULT_PROXY, null);
+                //response = client.execute(hr, context);
+                response = execute(hr, client, context);
+            }else{
+                throw e;
+            }
+        }
+
+        byte[] data = null;
+        String redirect = url;
+
+        int code = response.getStatusLine().getStatusCode();
+        String message = response.getStatusLine().getReasonPhrase();
+        String error = null;
+
+        HttpEntity entity = response.getEntity();
+
+        File file = null;
+        File tempFile = null;
+
+        if(code < 200 || code >= 300){
+            InputStream is = null;
+            try{
+                if(entity != null){
+                    is = entity.getContent();
+                    byte[] s = toData(getEncoding(entity), is);
+
+                    error = new String(s, "UTF-8");
+
+                    Debug.LogE("error", error);
+                }
+            }catch(Exception e){
+                e.printStackTrace();
+                Debug.Log(e);
+            }finally{
+                AjaxUtility.close(is);
+            }
+        }else{
+
+            HttpHost currentHost = (HttpHost) context.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
+            HttpUriRequest currentReq = (HttpUriRequest) context.getAttribute(ExecutionContext.HTTP_REQUEST);
+            redirect = currentHost.toURI() + currentReq.getURI();
+
+            int size = Math.max(32, Math.min(1024 * 64, (int) entity.getContentLength()));
+
+            OutputStream os = null;
+            InputStream is = null;
+
+            try{
+                file = getPreFile();
+
+                if(file == null){
+                    os = new PredefinedBAOS(size);
+                }else{
+                    //file.createNewFile();
+                    tempFile = makeTempFile(file);
+                    os = new BufferedOutputStream(new FileOutputStream(tempFile));
+                }
+                is = entity.getContent();
+
+                boolean gzip = "gzip".equalsIgnoreCase(getEncoding(entity));
+
+                if(gzip){
+                    is = new GZIPInputStream(is);
+                }
+
+                int contentLength = (int) entity.getContentLength();
+
+                copy(is, os, contentLength, tempFile, file);
+                if(file == null){
+                    data = ((PredefinedBAOS) os).toByteArray();
+                }else{
+                    if(!file.exists() || file.length() == 0){
+                        file = null;
+                    }
+                }
+
+            }finally{
+                AjaxUtility.close(is);
+                AjaxUtility.close(os);
+            }
+        }
+
+        Debug.Log("response:", code+"");
+        if(data != null){
+            Debug.Log( data.length+" :"+ url);
+        }
+        status.code(code).message(message).error(error).redirect(redirect).time(new Date()).data(data).file(file).client(client).context(context).headers(response.getAllHeaders());
+    }
+
+    /**
+     * 获取http client
+     */
+    private static DefaultHttpClient client;
+    private static DefaultHttpClient getClient(){
+
+        if(client == null || !REUSE_CLIENT){
+
+            Debug.Log("creating http client");
+
+            HttpParams httpParams = new BasicHttpParams();
+
+            //httpParams.setParameter(CoreProtocolPNames.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
+
+            HttpConnectionParams.setConnectionTimeout(httpParams, NET_TIMEOUT);
+            HttpConnectionParams.setSoTimeout(httpParams, NET_TIMEOUT);
+
+            //ConnManagerParams.setMaxConnectionsPerRoute(httpParams, new ConnPerRouteBean(NETWORK_POOL));
+            ConnManagerParams.setMaxConnectionsPerRoute(httpParams, new ConnPerRouteBean(25));
+
+            //Added this line to avoid issue at: http://stackoverflow.com/questions/5358014/android-httpclient-oom-on-4g-lte-htc-thunderbolt
+            HttpConnectionParams.setSocketBufferSize(httpParams, 8192);
+
+            SchemeRegistry registry = new SchemeRegistry();
+            registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+            registry.register(new Scheme("https", ssf == null ? SSLSocketFactory.getSocketFactory() : ssf, 443));
+
+            ThreadSafeClientConnManager cm = new ThreadSafeClientConnManager(httpParams, registry);
+            client = new DefaultHttpClient(cm, httpParams);
+        }
+        return client;
+    }
+
+    //helper method to support underscore subdomain
+
+    /**
+     * 执行网络请求
+     * @param hr
+     * @param client
+     * @param context
+     * @return
+     * @throws ClientProtocolException
+     * @throws IOException
+     */
+    private HttpResponse execute(HttpUriRequest hr, DefaultHttpClient client, HttpContext context) throws ClientProtocolException, IOException{
+
+        HttpResponse response = null;
+
+        if(hr.getURI().getAuthority().contains("_")) {
+            URL urlObj = hr.getURI().toURL();
+            HttpHost host;
+            if(urlObj.getPort() == -1) {
+                host = new HttpHost(urlObj.getHost(), 80, urlObj.getProtocol());
+            } else {
+                host = new HttpHost(urlObj.getHost(), urlObj.getPort(), urlObj.getProtocol());
+            }
+            response = client.execute(host, hr, context);
+        } else {
+            response = client.execute(hr, context);
+        }
+        return response;
+    }
+
+    private static boolean isMultiPart(Map<String, Object> params){
+        for(Map.Entry<String, Object> entry: params.entrySet()){
+            Object value = entry.getValue();
+            Debug.Log(entry.getKey(), value.toString());
+            if(value instanceof File || value instanceof byte[] || value instanceof InputStream) return true;
+        }
+        return false;
+    }
+
+    private void httpMulti(String url, Map<String, Object> params, AjaxStatus status) throws IOException {
+
+        Debug.Log("multipart", url);
+
+        HttpURLConnection conn = null;
+        DataOutputStream dos = null;
+
+        URL u = new URL(url);
+
+        Proxy py = null;
+
+        if(proxy != null){
+            Debug.Log("proxy :"+ proxy);
+            py = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxy.getHostName(), proxy.getPort()));
+        }else if(proxyHandle != null){
+            py = proxyHandle.makeProxy(this);
+        }
+
+        if(py == null){
+            conn = (HttpURLConnection) u.openConnection();
+        }else{
+            conn = (HttpURLConnection) u.openConnection(py);
+        }
+
+        conn.setInstanceFollowRedirects(false);
+        conn.setConnectTimeout(NET_TIMEOUT * 4);
+        conn.setDoInput(true);
+        conn.setDoOutput(true);
+        conn.setUseCaches(false);
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Connection", "Keep-Alive");
+        conn.setRequestProperty("Content-Type", "multipart/form-data;charset=utf-8;boundary=" + boundary);
+
+        if(headers != null){
+            for(String name: headers.keySet()){
+                conn.setRequestProperty(name, headers.get(name));
+            }
+        }
+
+        String cookie = makeCookie();
+        if(cookie != null){
+            conn.setRequestProperty("Cookie", cookie);
+        }
+
+        if(ah != null){
+            ah.applyToken(this, conn);
+        }
+        dos = new DataOutputStream(conn.getOutputStream());
+        for(Map.Entry<String, Object> entry: params.entrySet()){
+
+            writeObject(dos, entry.getKey(), entry.getValue());
+        }
+
+        dos.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+        dos.flush();
+        dos.close();
+
+        conn.connect();
+        int code = conn.getResponseCode();
+
+        String message = conn.getResponseMessage();
+
+        byte[] data = null;
+
+        String encoding = conn.getContentEncoding();
+        String error = null;
+
+        if(code < 200 || code >= 300){
+            error = new String(toData(encoding, conn.getErrorStream()), "UTF-8");
+            Debug.LogE("error", error);
+        }else{
+            data = toData(encoding, conn.getInputStream());
+        }
+        Debug.Log("response :"+code);
+        if(data != null){
+            Debug.Log(data.length+":"+url);
+        }
+
+        status.code(code).message(message).redirect(url).time(new Date()).data(data).error(error).client(null);
+    }
+
+    /**
+     * 字符流转换为数据
+     * @param encoding
+     * @param is
+     * @return
+     * @throws IOException
+     */
+    private byte[] toData(String encoding, InputStream is) throws IOException{
+
+        boolean gzip = "gzip".equalsIgnoreCase(encoding);
+
+        if(gzip){
+            is = new GZIPInputStream(is);
+        }
+
+        return AjaxUtility.toBytes(is);
+    }
+
+    /**
+     * 读写
+     * @param dos
+     * @param name
+     * @param obj
+     * @throws IOException
+     */
+    private static void writeObject(DataOutputStream dos, String name, Object obj) throws IOException{
+
+        if(obj == null) return;
+
+        if(obj instanceof File){
+
+            File file = (File) obj;
+            writeData(dos, name, file.getName(), new FileInputStream(file));
+
+        }else if(obj instanceof byte[]){
+            writeData(dos, name, name, new ByteArrayInputStream((byte[]) obj));
+        }else if(obj instanceof InputStream){
+            writeData(dos, name, name, (InputStream) obj);
+        }else{
+            writeField(dos, name, obj.toString());
+        }
+    }
+
+    private static void writeData(DataOutputStream dos, String name, String filename, InputStream is) throws IOException {
+
+        dos.writeBytes(twoHyphens + boundary + lineEnd);
+        dos.writeBytes("Content-Disposition: form-data; name=\""+name+"\";"
+                + " filename=\"" + filename + "\"" + lineEnd);
+
+        //added to specify type
+        dos.writeBytes("Content-Type: application/octet-stream");
+        dos.writeBytes(lineEnd);
+        dos.writeBytes("Content-Transfer-Encoding: binary");
+        dos.writeBytes(lineEnd);
+
+        dos.writeBytes(lineEnd);
+        AjaxUtility.copy(is, dos);
+
+        dos.writeBytes(lineEnd);
+    }
+
+
+    private static void writeField(DataOutputStream dos, String name, String value) throws IOException {
+        dos.writeBytes(twoHyphens + boundary + lineEnd);
+        dos.writeBytes("Content-Disposition: form-data; name=\"" + name + "\"");
+        dos.writeBytes(lineEnd);
+        dos.writeBytes(lineEnd);
+
+        byte[] data = value.getBytes("UTF-8");
+        dos.write(data);
+
+        dos.writeBytes(lineEnd);
+    }
+
+    /**
+     * 使用cookie
+     * @return
+     */
+    private String makeCookie(){
+        if(cookies == null || cookies.size() == 0) return null;
+
+        Iterator<String> iter = cookies.keySet().iterator();
+
+        StringBuilder sb = new StringBuilder();
+
+        while(iter.hasNext()){
+            String key = iter.next();
+            String value = cookies.get(key);
+            sb.append(key);
+            sb.append("=");
+            sb.append(value);
+            if(iter.hasNext()){
+                sb.append("; ");
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 将HttpEntity 转换为String
+     * @param entity
+     * @return
+     */
+    private String getEncoding(HttpEntity entity){
+
+        if(entity == null) return null;
+
+        Header eheader = entity.getContentEncoding();
+        if(eheader == null) return null;
+
+        return eheader.getValue();
+    }
+
+    /**
+     * 数据缓存
+     * @param is
+     * @param os
+     * @param max
+     * @param tempFile
+     * @param destFile
+     * @throws IOException
+     */
+    private void copy(InputStream is, OutputStream os, int max, File tempFile, File destFile) throws IOException{
+        //if no file operation is involved
+        if(destFile == null){
+            copy(is, os, max);
+            return;
+        }
+        try{
+            copy(is, os, max);
+            is.close();
+            os.close();
+            tempFile.renameTo(destFile);
+        }catch(IOException e){
+
+            Debug.Log("copy failed, deleting files");
+            //copy is a failure, delete everything
+            tempFile.delete();
+            destFile.delete();
+
+            AjaxUtility.close(is);
+            AjaxUtility.close(os);
+            throw e;
+        }
+    }
+
+    private File makeTempFile(File file) throws IOException{
+        File temp = new File(file.getAbsolutePath() + ".tmp");
+        temp.createNewFile();
+
+        return temp;
 
     }
 
+    /**
+     *
+     * @param is
+     * @param os
+     * @param max
+     * @throws IOException
+     */
+    private void copy(InputStream is, OutputStream os, int max) throws IOException{
+        Object o = null;
+        if(progress != null){
+            o = progress.get();
+        }
+
+        Progress p = null;
+
+        if(o != null){
+            p = new Progress(o);
+        }
+        AjaxUtility.copy(is, os, max, p);
+    }
 }
