@@ -288,7 +288,7 @@ public class AjaxUtility {
         try {
             File[] files = cacheDir.listFiles();
             if (files == null) return;
-            Arrays.sort(files , new Common());// 排序
+            Arrays.sort(files , new Common());// 排序 (按照文件修改的时间排顺序)
 
             if (cleanNeeded(files , triggerSize)){ //删除缓存文件
                 cleanCache(files , targetSize);

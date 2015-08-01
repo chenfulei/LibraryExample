@@ -7,14 +7,23 @@ package com.library.constants;
  */
 public class FLConstants {
 
-    //callback 请求中需要的常量
-    public static final int METHOD_DETECT = 4;
-    public static final int TAG_URL = 0x40FF0001; // url标记
-    public static final int CACHE_DEFAULT = 0; // 缓存指针
-    public static final int CACHE_PERSISTENT = 1;// 缓存指针
-
-
     public static boolean isAnim = true; // 是否开启activity跳转动画
     public static String isAnimDirection = "right"; // right left
 
+
+
+    //callback 请求中需要的常量
+    public static final int METHOD_DETECT = 4;
+    public static final int CACHE_DEFAULT = 0; // 缓存指针
+    public static final int CACHE_PERSISTENT = 1;// 缓存指针
+    //callback 里面的tag常量
+    public static final int TAG_URL = 0x40FF0001; // url标记
+    public static final int TAG_SCROLL_LISTENER = 0x40FF0002;
+    public static final int TAG_LAYOUT = 0x40FF0003;
+    public static final int TAG_NUM = 0x40FF0004;
+    public static final int TAG_1 = 0x40FF0005;
+    public static final int TAG_2 = 0x40FF0006;
+    public static final int TAG_3 = 0x40FF0007;
+    public static final int TAG_4 = 0x40FF0008;
+    public static final int TAG_5 = 0x40FF0009;
 }
