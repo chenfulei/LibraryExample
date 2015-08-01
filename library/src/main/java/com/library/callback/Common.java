@@ -76,10 +76,10 @@ public class Common implements Comparator<File>, Runnable, View.OnClickListener,
             switch(methodId){
 
                 case CLEAN_CACHE:
-//                    AQUtility.cleanCache((File) params[0], (Long) params[1], (Long) params[2]);
+                    AjaxUtility.cleanCache((File) params[0], (Long) params[1], (Long) params[2]);
                     break;
                 case STORE_FILE:
-//                    AQUtility.store((File) params[0], (byte[]) params[1]);
+                    AjaxUtility.store((File) params[0], (byte[]) params[1]);
                     break;
 
             }

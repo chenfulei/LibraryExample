@@ -1,13 +1,26 @@
 package com.library.callback;
 
+import android.content.Context;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 
+import com.library.constants.FLConstants;
 import com.library.utils.Debug;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.library.callback.AjaxUtility.postAsync;
 
@@ -107,7 +120,7 @@ public class AjaxUtility {
         });
     }
     public static void post(Object object , String method){
-        post(object , method , new Class[0]);
+        post(object, method, new Class[0]);
     }
 
     /**
@@ -149,7 +162,7 @@ public class AjaxUtility {
         });
     }
     public static void postAsync(Object object , String method){
-        postAsync(object , method , new Class[0]);
+        postAsync(object, method, new Class[0]);
     }
 
 
@@ -182,6 +195,7 @@ public class AjaxUtility {
     }
 
 
+/****************************文件操作******************************/
     /**
      * 关闭
      *
@@ -196,6 +210,272 @@ public class AjaxUtility {
             Debug.Log(e);
         }
     }
+
+    /**
+     * 数据写进文件
+     * @param file
+     * @param data
+     */
+    public static void write(File file , byte[] data){
+        try {
+            if (!file.exists()){
+                try{
+                    file.createNewFile();
+                }catch (Exception e){
+                    e.printStackTrace();
+                    Debug.Log("file create fail");
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 保存数据到文件
+     * @param file
+     */
+    public static void store(File file , byte[] data){
+        try {
+
+            if (file != null){
+                AjaxUtility.write(file, data);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 可以提供按照规定时间执行
+     */
+    private static ScheduledExecutorService storeExe;
+    private static ScheduledExecutorService getFileStoreExecutor(){
+        if (storeExe == null){
+            storeExe = Executors.newSingleThreadScheduledExecutor();
+        }
+
+        return storeExe;
+    }
+
+    /**
+     * 删除缓存文件(同步)
+     * @param context
+     * @param triggerSize
+     * @param targetSize
+     */
+    public static void cleanCacheAsync(Context context , long triggerSize , long targetSize){
+        try {
+            File cacheDir = getCacheDir(context);
+
+            //反射删除缓存
+            Common common = new Common().method(Common.CLEAN_CACHE , cacheDir , triggerSize , targetSize);
+            ScheduledExecutorService executorService = getFileStoreExecutor();
+            executorService.schedule(common , 0 , TimeUnit.MILLISECONDS); //规定时间去执行
+        }catch (Exception e){
+            e.printStackTrace();
+            Debug.Log(e);
+        }
+    }
+
+    /**
+     * 删除缓存文件
+     * @param cacheDir 目标缓存文件根目录
+     * @param triggerSize // 最小值
+     * @param targetSize // 最大值
+     */
+    public static void cleanCache(File cacheDir , long triggerSize , long targetSize){
+        try {
+            File[] files = cacheDir.listFiles();
+            if (files == null) return;
+            Arrays.sort(files , new Common());// 排序
+
+            if (cleanNeeded(files , triggerSize)){ //删除缓存文件
+                cleanCache(files , targetSize);
+            }
+
+            File temp = getTempDir(); // 删除临时文件
+            if (temp != null && temp.exists()){
+                cleanCache(temp.listFiles() , 0);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+            Debug.Log(e);
+        }
+    }
+
+
+    /**
+     * 创建零时文件
+     * @return
+     */
+    public static File getTempDir(){
+        File ext = Environment.getExternalStorageDirectory();
+        File tempDir = new File(ext , "library/temp");
+        tempDir.mkdirs();
+
+        if (!tempDir.exists() || !tempDir.canWrite()){ // 如果不能创建或者不能读写的话表示创建失败
+            return  null;
+        }
+
+        return tempDir;
+    }
+
+    /***
+     * 判断是否必须删除的文件
+     * @param files
+     * @param triggerSize
+     */
+    private static boolean cleanNeeded(File[] files , long triggerSize){
+        long total = 0;
+        for (File file : files){
+            total += file.length();
+
+            if (total > triggerSize){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 清除缓存(一旦文件大小总值超过max 就会删除掉)
+     * @param files
+     * @param maxSize // 设置最大值
+     */
+    private static void cleanCache(File[] files , long maxSize){
+        int deletes = 0;
+        long total = 0;
+
+        for (int i= 0; i < files.length ; i ++){
+            File f = files[i];
+
+            if (f.isFile()){
+                //文件大小相加
+                total += f.length();
+
+                if (total >= maxSize){ // 总值超过max时会删除之后的文件
+                    deletes ++;
+                    f.delete();
+                }
+            }
+        }
+
+        Debug.Log("cleanCache deletes file : "+ deletes);
+    }
+
+    private static File cacheDir; // 缓存文件根目录
+    private static File pcacheDir;
+    /**
+     * 获取缓存文件根目录
+     * @param context
+     * @param policy // 缓存指针
+     * @return
+     */
+    public static File getCacheDir(Context context , int policy){
+        if (policy == FLConstants.CACHE_PERSISTENT){
+            if (pcacheDir != null) return pcacheDir;
+
+            File file = getCacheDir(context);
+            pcacheDir = new File(file , "persistent");
+            pcacheDir.mkdirs();
+
+            return pcacheDir;
+        }else {
+            return  getCacheDir(context);
+        }
+    }
+    public static File getCacheDir(Context context){
+        if (cacheDir == null){
+            cacheDir = new File(context.getCacheDir() , "library"); // 默认的缓存文件根目录
+            cacheDir.mkdirs();
+        }
+
+        return cacheDir;
+    }
+
+    /**
+     * 设置缓存文件根目录
+     * @param dir
+     */
+    public static void setCacheDir(File dir){
+        cacheDir = dir;
+        if (cacheDir != null){
+            cacheDir.mkdirs();
+        }
+    }
+
+    private static final int IO_BUFFER_SIZE = 1024 *4; // 最大速度
+    private static final boolean TEST_IO_EXCEPTION = false ;//是否捕捉异常
+
+    /**
+     *将输入转换为输出 并设置进度条
+     * @param inputStream
+     * @param outputStream
+     * @throws IOException
+     */
+    public static void copy(InputStream inputStream , OutputStream outputStream) throws IOException{
+        copy(inputStream , outputStream , 0 , null);
+    }
+
+    /**
+     * 将输入转换为输出 并设置进度条
+     * @param inputStream
+     * @param outputStream
+     * @param max // 该文件的总size
+     * @param progress // 进度条
+     * @throws IOException
+     */
+    public static void copy(InputStream inputStream , OutputStream outputStream , int max , Progress progress) throws IOException{
+        if (progress !=null){
+            progress.reset(); //重置
+            progress.setBytes(max); // 设置最大值
+        }
+
+        byte[] b = new  byte[IO_BUFFER_SIZE];
+        int read = 0;
+        int count = 0;
+
+        while ((read = inputStream.read()) != -1){
+            outputStream.write(b , 0 , count);
+            count ++;
+
+           if (progress != null){
+               progress.increment(read); // 显示进度
+           }
+        }
+
+        //关闭进度条
+        if (progress != null ){
+            progress.done();
+        }
+    }
+
+
+    /**
+     * 将inputStream 转换为bytes
+     * @param inputStream
+     * @return
+     */
+    public static byte[] toBytes(InputStream inputStream){
+        byte[] result = null;
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        try{
+            //将输入转换为输出
+            copy(inputStream , byteArrayOutputStream);
+            result = byteArrayOutputStream.toByteArray();
+
+        }catch (Exception e){
+            e.printStackTrace();
+            Debug.Log(e);
+        }
+
+        close(inputStream);
+
+        return result;
+    }
+
 
     /**********************生产 Base64 characters  start**************************/
     private static final char[] map1 = new char[64];
