@@ -12,7 +12,7 @@ public class FLConstants {
 
 
 
-    //callback 请求中需要的常量
+    /********************callback 请求中需要的常量 start***************************/
     public static final int CACHE_DEFAULT = 0; // 缓存指针
     public static final int CACHE_PERSISTENT = 1;// 缓存指针
     public static final String ACTIVE_ACCOUNT = "aq.account";
@@ -34,4 +34,10 @@ public class FLConstants {
     public static final int METHOD_DELETE = 2;
     public static final int METHOD_PUT = 3;
     public static final int METHOD_DETECT = 4;
+
+    //图片缓存
+    public static final float RATIO_PRESERVE = Float.MAX_VALUE;
+    public static final float ANCHOR_DYNAMIC = Float.MAX_VALUE;
+
+    /********************callback 请求中需要的常量 end***************************/
 }
