@@ -38,6 +38,12 @@ public class FLConstants {
     //图片缓存
     public static final float RATIO_PRESERVE = Float.MAX_VALUE;
     public static final float ANCHOR_DYNAMIC = Float.MAX_VALUE;
+    public static final int INVISIBLE = -1;
+    public static final int GONE = -2;
+    public static final int PRESET = -3;
+    public static final int FADE_IN = -1;
+    public static final int FADE_IN_NETWORK = -2;
+    public static final int FADE_IN_FILE = -3;
 
     /********************callback 请求中需要的常量 end***************************/
 }
