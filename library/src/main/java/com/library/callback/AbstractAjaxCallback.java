@@ -117,8 +117,6 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
     private int policy = FLConstants.CACHE_DEFAULT;
     private File cacheDir;
     private File targetFile;
-    protected AccountHandle ah;
-
     protected AjaxStatus status;
 
     protected boolean fileCache; //是否文件缓存
@@ -156,7 +154,6 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
         progress = null;
         request = null;
         transformer = null;
-        ah = null;
         act = null;
     }
 
@@ -261,34 +258,6 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
 
     public K networkUrl(String url){
         this.networkUrl = url;
-        return self();
-    }
-
-    /**
-     * Set the authentication type of this request. This method requires API 5+.
-     *
-     * @param act the current activity
-     * @param type the auth type
-     * @param account the account, such as someone@gmail.com
-     * @return self
-     */
-    public K auth(Activity act, String type, String account){
-
-        if(android.os.Build.VERSION.SDK_INT >= 5 && type.startsWith("g.")){
-            ah = new GoogleHandle(act, type, account);
-        }
-        return self();
-    }
-
-    /**
-     * Set the authentication account handle.
-     *
-     * @param handle the account handle
-     * @return self
-     */
-
-    public K auth(AccountHandle handle){
-        ah = handle;
         return self();
     }
 
@@ -736,9 +705,7 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
      * @return
      */
     private String getCacheUrl(){
-        if(ah != null){
-            return ah.getCacheUrl(url);
-        }
+
         return url;
     }
 
@@ -754,11 +721,6 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
         if(networkUrl != null){
             result = networkUrl;
         }
-
-        if(ah != null){
-            result = ah.getNetworkUrl(result);
-        }
-
         return result;
     }
 
@@ -1196,13 +1158,6 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
         }
 
         showProgress(true); //显示进度条
-        if(ah != null){
-            if(!ah.authenticated()){
-                Debug.LogE("auth needed", url);
-                ah.auth(this);
-                return;
-            }
-        }
 
         work(context);
     }
@@ -1403,16 +1358,6 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
         try{
             network(retry + 1);
 
-            if(ah != null && ah.expired(this, status) && !reauth){
-                Debug.Log("reauth needed:", status.getMessage());
-                reauth = true;
-                if(ah.reauth(this)){
-                    network();
-                }else{
-                    status.reauth(true);
-                    return;
-                }
-            }
             data = status.getData();
 
         }catch(IOException e){
@@ -1644,11 +1589,6 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
         if(GZIP && (headers == null || !headers.containsKey("Accept-Encoding"))){
             hr.addHeader("Accept-Encoding", "gzip");
         }
-
-        if(ah != null){
-            ah.applyToken(this, hr);
-        }
-
         String cookie = makeCookie();
         if(cookie != null){
             hr.addHeader("Cookie", cookie);
@@ -1897,9 +1837,6 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
             conn.setRequestProperty("Cookie", cookie);
         }
 
-        if(ah != null){
-            ah.applyToken(this, conn);
-        }
         dos = new DataOutputStream(conn.getOutputStream());
         for(Map.Entry<String, Object> entry: params.entrySet()){
 

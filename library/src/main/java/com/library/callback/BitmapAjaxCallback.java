@@ -947,8 +947,8 @@ public class BitmapAjaxCallback extends AbstractAjaxCallback<Bitmap , BitmapAjax
         }
     }
 
-    public static void async(Activity act, Context context, ImageView iv, String url, Object progress, AccountHandle ah, ImageOptions options, HttpHost proxy, String networkUrl , boolean isBackground){
-        async(act, context, iv, url, options.memCache, options.fileCache, options.targetWidth, options.fallback, options.preset, options.animation, options.ratio, options.anchor, progress, ah, options.policy, options.round, proxy, isBackground , networkUrl);
+    public static void async(Activity act, Context context, ImageView iv, String url, Object progress, ImageOptions options, HttpHost proxy, String networkUrl , boolean isBackground){
+        async(act, context, iv, url, options.memCache, options.fileCache, options.targetWidth, options.fallback, options.preset, options.animation, options.ratio, options.anchor, progress, options.policy, options.round, proxy, isBackground , networkUrl);
     }
 
     /**
@@ -966,14 +966,13 @@ public class BitmapAjaxCallback extends AbstractAjaxCallback<Bitmap , BitmapAjax
      * @param ratio
      * @param anchor
      * @param progress
-     * @param ah
      * @param policy
      * @param round
      * @param proxy
      * @param isBackground
      * @param networkUrl
      */
-    public static void async(Activity act, Context context, ImageView iv, String url, boolean memCache, boolean fileCache, int targetWidth, int fallbackId, Bitmap preset, int animation, float ratio, float anchor, Object progress, AccountHandle ah, int policy, int round, HttpHost proxy, boolean isBackground ,String networkUrl){
+    public static void async(Activity act, Context context, ImageView iv, String url, boolean memCache, boolean fileCache, int targetWidth, int fallbackId, Bitmap preset, int animation, float ratio, float anchor, Object progress, int policy, int round, HttpHost proxy, boolean isBackground ,String networkUrl){
         Bitmap bm = null;
 
         if(memCache){
@@ -991,7 +990,7 @@ public class BitmapAjaxCallback extends AbstractAjaxCallback<Bitmap , BitmapAjax
 
         }else{
             BitmapAjaxCallback cb = new BitmapAjaxCallback();
-            cb.url(url).imageView(iv).memCache(memCache).fileCache(fileCache).targetWidth(targetWidth).fallback(fallbackId).preset(preset).animation(animation).ratio(ratio).anchor(anchor).progress(progress).auth(ah).policy(policy).round(round).networkUrl(networkUrl).setBackground(isBackground);
+            cb.url(url).imageView(iv).memCache(memCache).fileCache(fileCache).targetWidth(targetWidth).fallback(fallbackId).preset(preset).animation(animation).ratio(ratio).anchor(anchor).progress(progress).policy(policy).round(round).networkUrl(networkUrl).setBackground(isBackground);
             if(proxy != null){
                 cb.proxy(proxy.getHostName(), proxy.getPort());
             }
