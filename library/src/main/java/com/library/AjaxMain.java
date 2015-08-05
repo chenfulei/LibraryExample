@@ -1,5 +1,8 @@
 package com.library;
 
+import android.app.Activity;
+import android.content.Context;
+
 import com.library.callback.AbstractAjaxMain;
 
 /**
@@ -9,5 +12,12 @@ import com.library.callback.AbstractAjaxMain;
  */
 public class AjaxMain extends AbstractAjaxMain{
 
+    public AjaxMain(Context context){
+        super(context);
+    }
+
+    public AjaxMain(Activity activity){
+        super(activity);
+    }
 
 }
