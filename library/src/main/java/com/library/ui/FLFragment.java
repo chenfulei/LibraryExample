@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 
+import com.library.AjaxMain;
 import com.library.R;
 import com.library.constants.FLConstants;
 import com.library.utils.Debug;
@@ -16,10 +17,13 @@ import com.library.utils.Debug;
 public abstract class FLFragment extends FLFrameFragment {
 
     public Activity activity;
+    protected AjaxMain ajaxMain; // 异步网络请求等入口
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Debug.Log(getClass().getName(), "onCreate");
+        ajaxMain = new AjaxMain(getActivity());
 
         activity = getActivity();
         super.onCreate(savedInstanceState);
@@ -47,6 +51,7 @@ public abstract class FLFragment extends FLFrameFragment {
     public void onDestroyView() {
         Debug.Log(getClass().getName(), "onDestroyView");
         super.onDestroyView();
+        ajaxMain.dismiss();
     }
 
     @Override

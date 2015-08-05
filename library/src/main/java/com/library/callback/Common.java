@@ -15,6 +15,7 @@ import android.widget.Gallery;
 import android.widget.ListAdapter;
 import android.widget.ProgressBar;
 
+import com.library.AjaxMain;
 import com.library.constants.FLConstants;
 import com.library.utils.Debug;
 
@@ -402,11 +403,12 @@ public class Common implements Comparator<File>, Runnable, View.OnClickListener,
             }else if(p instanceof Dialog){
 
                 Dialog pd = (Dialog) p;
+                AjaxMain ajaxMain = new AjaxMain(pd.getContext());
 
                 if(show){
-                    pd.show();
+                    ajaxMain.show(pd);
                 }else{
-                    pd.dismiss();
+                    ajaxMain.dismiss(pd);
                 }
 
             }else if(p instanceof Activity){

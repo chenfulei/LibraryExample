@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.view.View;
 import android.widget.ProgressBar;
 
+import com.library.AjaxMain;
 import com.library.constants.FLConstants;
 
 /**
@@ -139,7 +140,8 @@ public class Progress implements Runnable {
         reset();
 
         if(pd != null){
-            pd.show();
+            AjaxMain ajaxMain = new AjaxMain(pd.getContext());
+            ajaxMain.show(pd);
         }
 
         if(act != null){
@@ -173,7 +175,8 @@ public class Progress implements Runnable {
     private void dismiss(String url){
 
         if(pd != null){
-           pd.dismiss();
+            AjaxMain ajaxMain = new AjaxMain(pd.getContext());
+            ajaxMain.dismiss(pd);
         }
 
         if(act != null){

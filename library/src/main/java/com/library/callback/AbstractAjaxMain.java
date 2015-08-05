@@ -16,7 +16,9 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  * 调用ajax实现方式的入口
@@ -30,6 +32,7 @@ public abstract class AbstractAjaxMain<T extends AbstractAjaxMain<T>>{
 
     private View view;
     protected Object progress;
+    private static WeakHashMap<Dialog, Void> dialogs = new WeakHashMap<Dialog, Void>();
     private Transformer trans;
     private int policy = FLConstants.CACHE_DEFAULT;
     private HttpHost proxy;
@@ -94,6 +97,46 @@ public abstract class AbstractAjaxMain<T extends AbstractAjaxMain<T>>{
      */
     public T progress(Dialog dialog){
         progress = dialog;
+        return self();
+    }
+
+    public T show(Dialog dialog){
+        try{
+            if(dialog != null){
+                dialog.show();
+                dialogs.put(dialog, null);
+            }
+        }catch(Exception e){
+        }
+
+        return self();
+    }
+
+    public T dismiss(Dialog dialog){
+
+        try{
+            if(dialog != null){
+                dialogs.remove(dialog);
+                dialog.dismiss();
+            }
+        }catch(Exception e){
+        }
+        return self();
+    }
+
+    public T dismiss(){
+
+        Iterator<Dialog> keys = dialogs.keySet().iterator();
+
+        while(keys.hasNext()){
+
+            Dialog d = keys.next();
+            try{
+                d.dismiss();
+            }catch(Exception e){
+            }
+            keys.remove();
+        }
         return self();
     }
 
