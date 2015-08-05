@@ -9,7 +9,14 @@ import android.widget.ImageView;
 
 import com.library.constants.FLConstants;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
+import org.apache.http.entity.StringEntity;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.util.Map;
 
 /**
  * 调用ajax实现方式的入口
@@ -125,6 +132,20 @@ public abstract class AbstractAjaxMain<T extends AbstractAjaxMain<T>>{
     }
 
     /**
+     * 清除当前ImageView 的缓存
+     * @return
+     */
+    public T clear(){
+        if(view instanceof ImageView) {
+            ImageView iv = ((ImageView) view);
+            iv.setImageBitmap(null);
+            iv.setTag(FLConstants.TAG_URL, null);
+        }
+
+        return self();
+    }
+
+    /**
      * 网络请求(本地)图片并设置imageView中src
      * @param url 路径
      * @param memCache 缓存
@@ -141,8 +162,8 @@ public abstract class AbstractAjaxMain<T extends AbstractAjaxMain<T>>{
     protected T image(String  url , boolean memCache , boolean fileCache , int targetWidth , int fallbackId , Bitmap preset , int animId , float ratio ,
                       int round , String networkUrl){
         if (view instanceof ImageView){ // 必须是ImageView才能执行
-            BitmapAjaxCallback.async(activity , getContext() ,(ImageView) view ,  url , memCache , fileCache , targetWidth , fallbackId , preset ,
-                    animId , ratio , FLConstants.ANCHOR_DYNAMIC , progress , policy , round , proxy , false , networkUrl);
+            BitmapAjaxCallback.async(activity, getContext(), (ImageView) view, url, memCache, fileCache, targetWidth, fallbackId, preset,
+                    animId, ratio, FLConstants.ANCHOR_DYNAMIC, progress, policy, round, proxy, false, networkUrl);
             reset();
         }
 
@@ -254,5 +275,371 @@ public abstract class AbstractAjaxMain<T extends AbstractAjaxMain<T>>{
         return background(url, options, null);
     }
 
+    /**
+     *网络请求(本地)图片并设置imageView src
+     * @param callback
+     * @return
+     */
+    public T image(BitmapAjaxCallback callback){
 
+        if(view instanceof ImageView){
+            callback.imageView((ImageView) view);
+            invoke(callback);
+        }
+
+        return self();
+    }
+
+    /**
+     *网络请求(本地)图片并设置imageView 背景
+     * @param callback
+     * @return
+     */
+    public T background(BitmapAjaxCallback callback){
+
+        if(view instanceof ImageView){
+            callback.imageView((ImageView) view);
+            invoke(callback);
+        }
+
+        return self();
+    }
+
+    /**
+     * 网络请求(本地)图片并设置imageView src
+     * @param url
+     * @param memCache
+     * @param fileCache
+     * @param targetWidth
+     * @param resId
+     * @param callback
+     * @return
+     */
+    public T image(String url, boolean memCache, boolean fileCache, int targetWidth, int resId, BitmapAjaxCallback callback){
+
+        callback.targetWidth(targetWidth).fallback(resId)
+                .url(url).memCache(memCache).fileCache(fileCache);
+
+        return image(callback);
+    }
+
+    /**
+     * 网络请求(本地)图片并设置imageView 背景
+     * @param url
+     * @param memCache
+     * @param fileCache
+     * @param targetWidth
+     * @param resId
+     * @param callback
+     * @return
+     */
+    public T background(String url, boolean memCache, boolean fileCache, int targetWidth, int resId, BitmapAjaxCallback callback){
+
+        callback.targetWidth(targetWidth).fallback(resId)
+                .url(url).memCache(memCache).fileCache(fileCache).setBackground(true);
+
+        return image(callback);
+    }
+
+    public T image(File file, int targetWidth){
+        return image(file, true, targetWidth, null);
+    }
+    public T background(File file, int targetWidth){
+        return background(file, true, targetWidth, null);
+    }
+
+    public T image(File file, boolean memCache, int targetWidth, BitmapAjaxCallback callback){
+
+        if(callback == null) callback = new BitmapAjaxCallback();
+        callback.file(file);
+
+        String url = null;
+        if(file != null) url = file.getAbsolutePath();
+        return image(url, memCache, true, targetWidth, 0, callback);
+
+    }
+    public T background(File file, boolean memCache, int targetWidth, BitmapAjaxCallback callback){
+
+        if(callback == null) callback = new BitmapAjaxCallback();
+        callback.file(file);
+
+        String url = null;
+        if(file != null) url = file.getAbsolutePath();
+        return background(url, memCache, true, targetWidth, 0, callback);
+
+    }
+
+    public T image(Bitmap bm, float ratio){
+        BitmapAjaxCallback cb = new BitmapAjaxCallback();
+        cb.ratio(ratio).bitmap(bm);
+        return image(cb);
+    }
+
+    /**
+     * ajax 网络请求
+     * @param callback
+     * @param <K>
+     * @return
+     */
+    public <K> T ajax(AjaxCallback<K> callback){
+        return invoke(callback);
+    }
+
+    public <K> T ajax(String url, Class<K> type, AjaxCallback<K> callback){
+
+        callback.type(type).url(url);
+        return ajax(callback);
+    }
+
+    public <K> T ajax(String url, Class<K> type, long expire, AjaxCallback<K> callback){
+
+        callback.type(type).url(url).fileCache(true).expire(expire);
+
+        return ajax(callback);
+    }
+
+    public <K> T ajax(String url, Class<K> type, Object handler, String callback){
+        AjaxCallback<K> cb = new AjaxCallback<K>();
+        cb.type(type).weakHandler(handler, callback);
+
+        return ajax(url, type, cb);
+    }
+
+    public <K> T ajax(String url, Class<K> type, long expire, Object handler, String callback){
+        AjaxCallback<K> cb = new AjaxCallback<K>();
+        cb.type(type).weakHandler(handler, callback).fileCache(true).expire(expire);
+
+        return ajax(url, type, cb);
+    }
+
+    public <K> T ajax(String url, Map<String, ?> params, Class<K> type, AjaxCallback<K> callback){
+        callback.type(type).url(url).params(params);
+        return ajax(callback);
+    }
+
+    public <K> T ajax(String url, Map<String, ?> params, Class<K> type, Object handler, String callback){
+        AjaxCallback<K> cb = new AjaxCallback<K>();
+        cb.type(type).weakHandler(handler, callback);
+
+        return ajax(url, params, type, cb);
+    }
+
+    /**
+     * Ajax HTTP delete.
+     * @param url
+     * @param type
+     * @param callback
+     * @param <K>
+     * @return
+     */
+    public <K> T delete(String url, Class<K> type, AjaxCallback<K> callback){
+        callback.url(url).type(type).method(FLConstants.METHOD_DELETE);
+        return ajax(callback);
+    }
+    public <K> T delete(String url, Class<K> type, Object handler, String callback){
+
+        AjaxCallback<K> cb = new AjaxCallback<K>();
+        cb.weakHandler(handler, callback);
+        return delete(url, type, cb);
+    }
+
+    /***
+     * Ajax HTTP put
+     * @param url
+     * @param contentHeader
+     * @param entity
+     * @param type
+     * @param callback
+     * @param <K>
+     * @return
+     */
+    public <K> T put(String url, String contentHeader, HttpEntity entity, Class<K> type, AjaxCallback<K> callback){
+        callback.url(url).type(type).method(FLConstants.METHOD_PUT).header("Content-Type", contentHeader).param(FLConstants.POST_ENTITY, entity);
+        return ajax(callback);
+
+    }
+    public <K> T put(String url, JSONObject jo, Class<K> type, AjaxCallback<K> callback){
+
+        try{
+            StringEntity entity = new StringEntity(jo.toString(), "UTF-8");
+            return put(url, "application/json", entity, type, callback);
+        }catch(UnsupportedEncodingException e){
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    /**
+     * Ajax HTTP post
+     * @param url
+     * @param contentHeader
+     * @param entity
+     * @param type
+     * @param callback
+     * @param <K>
+     * @return
+     */
+    public <K> T post(String url, String contentHeader, HttpEntity entity, Class<K> type, AjaxCallback<K> callback){
+
+        callback.url(url).type(type).method(FLConstants.METHOD_POST).header("Content-Type", contentHeader).param(FLConstants.POST_ENTITY, entity);
+        return ajax(callback);
+
+    }
+    public <K> T post(String url, JSONObject jo, Class<K> type, AjaxCallback<K> callback){
+
+        try{
+            StringEntity entity = new StringEntity(jo.toString(), "UTF-8");
+            return post(url, "application/json", entity, type, callback);
+        }catch(UnsupportedEncodingException e){
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    /**
+     * Ajax call with that block until response is ready. This method cannot be called on UI thread.
+     * @param callback
+     * @param <K>
+     * @return
+     */
+    public <K> T sync(AjaxCallback<K> callback){
+        ajax(callback);
+        callback.block();
+        return self();
+    }
+
+    /**
+     *  Cache the url to file cache without any callback.
+     * @param url
+     * @param expire
+     * @return
+     */
+    public T cache(String url, long expire) {
+        return ajax(url, byte[].class, expire, null, null);
+    }
+
+    /**
+     * Stop all ajax activities. Should only be called when app exits.
+     * @return
+     */
+    public T ajaxCancel(){
+
+        AjaxCallback.cancel();
+
+        return self();
+    }
+
+
+    /**
+     * Return file cached by ajax or image requests. Returns null if url is not cached.
+     * @param url
+     * @return File
+     */
+    public File getCachedFile(String url){
+        File result = AjaxUtility.getExistedCacheByUrl(AjaxUtility.getCacheDir(getContext(), FLConstants.CACHE_PERSISTENT), url);
+        if(result == null) result = AjaxUtility.getExistedCacheByUrl(AjaxUtility.getCacheDir(getContext(), FLConstants.CACHE_DEFAULT), url);
+        return result;
+    }
+
+    /**
+     * Delete any cached file for the url.
+     *
+     * @param url
+     * @return self
+     */
+    public T invalidate(String url){
+
+        File file = getCachedFile(url);
+        if (file != null)
+            file.delete();
+
+        return self();
+    }
+
+
+    /**
+     * Return bitmap cached by image requests. Returns null if url is not cached.
+     *
+     * @param url
+     * @return Bitmap
+     */
+
+    public Bitmap getCachedImage(String url){
+        return getCachedImage(url, 0);
+    }
+
+    /**
+     * Return bitmap cached by image requests. Returns null if url is not cached.
+     *
+     * @param url
+     * @param targetWidth The desired downsampled width.
+     *
+     * @return Bitmap
+     */
+    public Bitmap getCachedImage(String url, int targetWidth){
+
+        Bitmap result = BitmapAjaxCallback.getMemoryCached(url, targetWidth);
+        if(result == null){
+            File file = getCachedFile(url);
+            if(file != null){
+                result = BitmapAjaxCallback.getResizedImage(file.getAbsolutePath(), null, targetWidth, true, 0);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Return cached bitmap with a resourceId. Returns null if url is not cached.
+     *
+     * Use this method instead of BitmapFactory.decodeResource(getResources(), resId) for caching.
+     *
+     * @param resId
+     *
+     * @return Bitmap
+     */
+    public Bitmap getCachedImage(int resId){
+        return BitmapAjaxCallback.getMemoryCached(getContext(), resId);
+    }
+
+    /**
+     * 反射
+     * @param method
+     * @param sig
+     * @param params
+     * @return
+     */
+    public Object invoke(String method, Class<?>[] sig, Object... params){
+
+        Object object = view;
+        if (object == null) object = activity;
+
+        return AjaxUtility.invokeMethod(object, method, false, sig, params);
+    }
+
+    protected <K> T invoke(AbstractAjaxCallback<?, K> cb){
+        if(progress != null){
+            cb.progress(progress);
+        }
+
+        if(trans != null){
+            cb.transformer(trans);
+        }
+
+        //if(policy != null){
+        cb.policy(policy);
+        //}
+
+        if(proxy != null){
+            cb.proxy(proxy.getHostName(), proxy.getPort());
+        }
+
+        if(activity != null){
+            cb.async(activity);
+        }else{
+            cb.async(getContext());
+        }
+
+        reset();
+
+        return self();
+    }
 }
