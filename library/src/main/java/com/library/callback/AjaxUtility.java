@@ -523,11 +523,11 @@ public class AjaxUtility {
             progress.setBytes(max); // 设置最大值
         }
 
-        byte[] b = new  byte[IO_BUFFER_SIZE];
+        byte[] b = new byte[IO_BUFFER_SIZE];
         int read = 0;
         int count = 0;
 
-        while ((read = inputStream.read()) != -1){
+        while ((read = inputStream.read(b)) != -1){
             outputStream.write(b , 0 , count);
             count ++;
 

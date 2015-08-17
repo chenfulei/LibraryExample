@@ -50,6 +50,7 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -110,6 +111,8 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
     protected Map<String, Object> params; // 参数
     protected Map<String, String> headers; // 头文件参数
     protected Map<String, String> cookies; // cookie参数
+
+    protected AccountHandle ah;
 
     private Transformer transformer;
     protected T result;
@@ -191,6 +194,36 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
      */
     public static void setSimulateError(boolean error) {
         SIMULATE_ERROR = error;
+    }
+
+    /**
+     * Set the authentication type of this request. This method requires API 5+.
+     *
+     * @param act the current activity
+     * @param type the auth type
+     * @param account the account, such as someone@gmail.com
+     * @return self
+     */
+    public K auth(Activity act, String type, String account){
+
+        if(android.os.Build.VERSION.SDK_INT >= 5 && type.startsWith("g.")){
+            ah = new GoogleHandle(act, type, account);
+        }
+
+        return self();
+
+    }
+
+    /**
+     * Set the authentication account handle.
+     *
+     * @param handle the account handle
+     * @return self
+     */
+
+    public K auth(AccountHandle handle){
+        ah = handle;
+        return self();
     }
 
     /**
@@ -705,6 +738,9 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
      * @return
      */
     private String getCacheUrl(){
+        if(ah != null){
+            return ah.getCacheUrl(url);
+        }
 
         return url;
     }
@@ -721,6 +757,11 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
         if(networkUrl != null){
             result = networkUrl;
         }
+
+        if(ah != null){
+            result = ah.getNetworkUrl(result);
+        }
+
         return result;
     }
 
@@ -1159,6 +1200,15 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
 
         showProgress(true); //显示进度条
 
+        if(ah != null){
+
+            if (!ah.authenticated()){
+                Debug.Log("auth needed", url);
+                ah.auth(this);
+                return;
+            }
+        }
+
         work(context);
     }
 
@@ -1357,6 +1407,17 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
 
         try{
             network(retry + 1);
+
+            if(ah != null && ah.expired(this, status) && !reauth){
+                Debug.Log("reauth needed", status.getMessage());
+                reauth = true;
+                if(ah.reauth(this)){
+                    network();
+                }else{
+                    status.reauth(true);
+                    return;
+                }
+            }
 
             data = status.getData();
 
@@ -1589,6 +1650,11 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
         if(GZIP && (headers == null || !headers.containsKey("Accept-Encoding"))){
             hr.addHeader("Accept-Encoding", "gzip");
         }
+
+        if(ah != null){
+            ah.applyToken(this, hr);
+        }
+
         String cookie = makeCookie();
         if(cookie != null){
             hr.addHeader("Cookie", cookie);
@@ -1673,7 +1739,6 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
             HttpHost currentHost = (HttpHost) context.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
             HttpUriRequest currentReq = (HttpUriRequest) context.getAttribute(ExecutionContext.HTTP_REQUEST);
             redirect = currentHost.toURI() + currentReq.getURI();
-
             int size = Math.max(32, Math.min(1024 * 64, (int) entity.getContentLength()));
 
             OutputStream os = null;
@@ -1724,7 +1789,7 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
     /**
      * 获取http client
      */
-    private static DefaultHttpClient client;
+    private static DefaultHttpClient client = null;
     private static DefaultHttpClient getClient(){
 
         if(client == null || !REUSE_CLIENT){
@@ -1734,7 +1799,6 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
             HttpParams httpParams = new BasicHttpParams();
 
             //httpParams.setParameter(CoreProtocolPNames.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
-
             HttpConnectionParams.setConnectionTimeout(httpParams, NET_TIMEOUT);
             HttpConnectionParams.setSoTimeout(httpParams, NET_TIMEOUT);
 
@@ -1749,7 +1813,7 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
             registry.register(new Scheme("https", ssf == null ? SSLSocketFactory.getSocketFactory() : ssf, 443));
 
             ThreadSafeClientConnManager cm = new ThreadSafeClientConnManager(httpParams, registry);
-            client = new DefaultHttpClient(cm, httpParams);
+            client = new DefaultHttpClient(httpParams);
         }
         return client;
     }
@@ -1835,6 +1899,10 @@ public abstract class AbstractAjaxCallback<T, K> implements Runnable {
         String cookie = makeCookie();
         if(cookie != null){
             conn.setRequestProperty("Cookie", cookie);
+        }
+
+        if(ah != null){
+            ah.applyToken(this, conn);
         }
 
         dos = new DataOutputStream(conn.getOutputStream());

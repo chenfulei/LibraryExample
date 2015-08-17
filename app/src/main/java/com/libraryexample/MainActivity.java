@@ -58,7 +58,6 @@ public class MainActivity extends FLActivity {
                 break;
 
             case R.id.btn_two:
-                int i = 1 / 0;
                 changeFragment(R.id.main_fragment, FragmentTwo.newInstance());
                 break;
 
