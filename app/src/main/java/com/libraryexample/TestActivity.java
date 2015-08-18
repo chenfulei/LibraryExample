@@ -6,7 +6,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.library.callback.AjaxCallbackT;
+import com.library.callback.AjaxCallback;
 import com.library.callback.AjaxStatus;
 import com.library.ui.FLActivity;
 import com.library.ui.FLBindView;
@@ -46,30 +46,21 @@ public class TestActivity extends FLActivity {
     @Override
     public void initData() {
         super.initData();
-//        ajaxMain.findView(image_src).image("http://a.hiphotos.baidu.com/exp/w=500/sign=97c510127a310a55c424def487474387/6f061d950a7b02081b07b50061d9f2d3562cc801.jpg" , true , true);
+//        ajaxMain.findView(image_src).image("http://a.hiphotos.baidu.com/exp/w=500/sign=97c510127a310a55c424def487474387/6f061d950a7b02081b07b50061d9f2d3562cc801.jpg", true, true);
 
     }
 
     public void callbackJson(){
-        ajaxMain.ajax("http://bapi.baby-kingdom.com/index.php?mod=misc&op=reportcustom&ver=2.0.0&app=android" ,String.class , new AjaxCallbackT<String>(){
-
-            public void callback(String url, String object, AjaxStatus status) {
-                Debug.LogE("callback status : "+status.getCode() +"  "+object);
-                text.setText(object);
-            }
-        });
-
-//        String url = "http://bapi.baby-kingdom.com/index.php?mod=misc&op=reportcustom&ver=2.0.0&app=android";
-//        aQuery.ajax(url , String.class , new AjaxCallback<String>(){
+//        ajaxMain.ajax("http://bapi.baby-kingdom.com/index.php?mod=misc&op=reportcustom&ver=2.0.0&app=android" ,String.class , new AjaxCallback<String>(){
 //
-//            @Override
 //            public void callback(String url, String object, AjaxStatus status) {
 //                Debug.LogE("callback status : "+status.getCode() +"  "+object);
 //                text.setText(object);
 //            }
 //        });
 
-
+        String im = "http://www.baby-kingdom.com/static/image/smiley/default/bb72.gif";
+        ajaxMain.findView(image_src).image(im, false, false, 0, R.mipmap.ic_launcher);
     }
 
     @Override
