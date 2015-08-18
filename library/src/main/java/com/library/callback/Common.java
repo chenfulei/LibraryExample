@@ -36,8 +36,8 @@ public class Common implements Comparator<File>, Runnable, View.OnClickListener,
     private Class<?>[] sig;
     private int methodId;
 
-    protected static final int STORE_FILE = 1;
-    protected static final int CLEAN_CACHE = 2;
+    public static final int STORE_FILE = 1;
+    public static final int CLEAN_CACHE = 2;
 
     public Common forward(Object handler, String callback, boolean fallback, Class<?>[] sig){
 

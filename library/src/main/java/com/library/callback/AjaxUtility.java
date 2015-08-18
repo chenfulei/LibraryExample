@@ -524,11 +524,11 @@ public class AjaxUtility {
         }
 
         byte[] b = new byte[IO_BUFFER_SIZE];
-        int read = 0;
+        int read;
         int count = 0;
 
         while ((read = inputStream.read(b)) != -1){
-            outputStream.write(b , 0 , count);
+            outputStream.write(b , 0 , read);
             count ++;
 
            if (progress != null){
@@ -552,7 +552,7 @@ public class AjaxUtility {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         try{
             //将输入转换为输出
-            copy(inputStream , byteArrayOutputStream);
+            copy(inputStream, byteArrayOutputStream);
             result = byteArrayOutputStream.toByteArray();
 
         }catch (Exception e){

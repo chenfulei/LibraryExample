@@ -206,7 +206,7 @@ public abstract class AbstractAjaxMain<T extends AbstractAjaxMain<T>>{
                       int round , String networkUrl){
         if (view instanceof ImageView){ // 必须是ImageView才能执行
             BitmapAjaxCallback.async(activity, getContext(), (ImageView) view, url, memCache, fileCache, targetWidth, fallbackId, preset,
-                    animId, ratio, FLConstants.ANCHOR_DYNAMIC, progress, policy, round, proxy, false, networkUrl);
+                    animId, ratio, FLConstants.ANCHOR_DYNAMIC, progress, null , policy, round, proxy, networkUrl);
             reset();
         }
 
@@ -251,8 +251,8 @@ public abstract class AbstractAjaxMain<T extends AbstractAjaxMain<T>>{
     protected T background(String  url , boolean memCache , boolean fileCache , int targetWidth , int fallbackId , Bitmap preset , int animId , float ratio ,
                       int round , String networkUrl){
         if (view instanceof ImageView){ // 必须是ImageView才能执行
-            BitmapAjaxCallback.async(activity , getContext() ,(ImageView) view ,  url , memCache , fileCache , targetWidth , fallbackId , preset ,
-                    animId , ratio , FLConstants.ANCHOR_DYNAMIC , progress , policy , round , proxy , true , networkUrl);
+//            BitmapAjaxCallback.async(activity , getContext() ,(ImageView) view ,  url , memCache , fileCache , targetWidth , fallbackId , preset ,
+//                    animId , ratio , FLConstants.ANCHOR_DYNAMIC , progress , policy , round , proxy , true , networkUrl);
             reset();
         }
 
@@ -289,7 +289,7 @@ public abstract class AbstractAjaxMain<T extends AbstractAjaxMain<T>>{
      */
     protected T image(String url, ImageOptions options, String networkUrl){
         if(view instanceof ImageView){
-            BitmapAjaxCallback.async(activity, getContext(), (ImageView) view, url, progress, options, proxy,networkUrl ,false);
+            BitmapAjaxCallback.async(activity, getContext(), (ImageView) view, url, progress,null , options, proxy,networkUrl);
             reset();
         }
         return self();
@@ -308,7 +308,7 @@ public abstract class AbstractAjaxMain<T extends AbstractAjaxMain<T>>{
      */
     protected T background(String url, ImageOptions options, String networkUrl){
         if(view instanceof ImageView){
-            BitmapAjaxCallback.async(activity, getContext(), (ImageView) view, url, progress, options, proxy,networkUrl ,true);
+//            BitmapAjaxCallback.async(activity, getContext(), (ImageView) view, url, progress, options, proxy,networkUrl ,true);
             reset();
         }
         return self();
@@ -378,8 +378,8 @@ public abstract class AbstractAjaxMain<T extends AbstractAjaxMain<T>>{
      */
     public T background(String url, boolean memCache, boolean fileCache, int targetWidth, int resId, BitmapAjaxCallback callback){
 
-        callback.targetWidth(targetWidth).fallback(resId)
-                .url(url).memCache(memCache).fileCache(fileCache).setBackground(true);
+//        callback.targetWidth(targetWidth).fallback(resId)
+//                .url(url).memCache(memCache).fileCache(fileCache).setBackground(true);
 
         return image(callback);
     }

@@ -78,7 +78,7 @@ public class AjaxStatus {
         this.message = message;
     }
 
-    protected AjaxStatus source(int source) {
+    public AjaxStatus source(int source) {
         this.source = source;
         return this;
     }
@@ -88,7 +88,7 @@ public class AjaxStatus {
         return this;
     }
 
-    protected AjaxStatus error(String error) {
+    public AjaxStatus error(String error) {
         this.error = error;
         return this;
     }
@@ -98,37 +98,37 @@ public class AjaxStatus {
         return this;
     }
 
-    protected AjaxStatus redirect(String redirect) {
+    public AjaxStatus redirect(String redirect) {
         this.redirect = redirect;
         return this;
     }
 
-    protected AjaxStatus context(HttpContext context) {
+    public AjaxStatus context(HttpContext context) {
         this.context = context;
         return this;
     }
 
-    protected AjaxStatus time(Date time) {
+    public AjaxStatus time(Date time) {
         this.time = time;
         return this;
     }
 
-    protected AjaxStatus refresh(boolean refresh) {
+    public AjaxStatus refresh(boolean refresh) {
         this.refresh = refresh;
         return this;
     }
 
-    protected AjaxStatus reauth(boolean reauth) {
+    public AjaxStatus reauth(boolean reauth) {
         this.reauth = reauth;
         return this;
     }
 
-    protected AjaxStatus client(DefaultHttpClient client) {
+    public AjaxStatus client(DefaultHttpClient client) {
         this.client = client;
         return this;
     }
 
-    protected AjaxStatus headers(Header[] headers) {
+    public AjaxStatus headers(Header[] headers) {
         this.headers = headers;
         return this;
     }
@@ -140,14 +140,14 @@ public class AjaxStatus {
         return this;
     }
 
-    protected AjaxStatus reset() {
+    public AjaxStatus reset() {
         this.duration = System.currentTimeMillis() - start;
         this.done = false;
         close();
         return this;
     }
 
-    protected void closeLater(Closeable c) {
+    public void closeLater(Closeable c) {
         this.close = c;
     }
 
@@ -160,12 +160,12 @@ public class AjaxStatus {
         close = null;
     }
 
-    protected AjaxStatus data(byte[] data) {
+    public AjaxStatus data(byte[] data) {
         this.data = data;
         return this;
     }
 
-    protected AjaxStatus file(File file) {
+    public AjaxStatus file(File file) {
         this.file = file;
         return this;
     }
@@ -175,15 +175,15 @@ public class AjaxStatus {
         return this;
     }
 
-    protected boolean getDone() {
+    public boolean getDone() {
         return done;
     }
 
-    protected boolean getReauth() {
+    public boolean getReauth() {
         return reauth;
     }
 
-    protected boolean getInvalid() {
+    public boolean getInvalid() {
         return invalid;
     }
 
@@ -216,11 +216,11 @@ public class AjaxStatus {
         return redirect;
     }
 
-    protected byte[] getData() {
+    public byte[] getData() {
         return data;
     }
 
-    protected File getFile() {
+    public File getFile() {
         return file;
     }
 
