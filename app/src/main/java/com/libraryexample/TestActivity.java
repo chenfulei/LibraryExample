@@ -1,16 +1,21 @@
 package com.libraryexample;
 
 import android.os.Message;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.library.FLJson;
 import com.library.callback.AjaxCallback;
 import com.library.callback.AjaxStatus;
 import com.library.ui.FLActivity;
 import com.library.ui.FLBindView;
 import com.library.utils.Debug;
+import com.libraryexample.bean.ReportBean;
+
+import org.json.JSONObject;
 
 /**
  * Created by chen_fulei on 2015/7/28.
@@ -29,12 +34,9 @@ public class TestActivity extends FLActivity {
     @FLBindView(id = R.id.text)
     private TextView text;
 
-//    private AQuery aQuery;
-
     @Override
     public void setRootView() {
         setContentView(R.layout.act_test);
-//        aQuery = new AQuery(this);
     }
 
     @Override
@@ -46,28 +48,41 @@ public class TestActivity extends FLActivity {
     @Override
     public void initData() {
         super.initData();
-//        ajaxMain.findView(image_src).image("http://a.hiphotos.baidu.com/exp/w=500/sign=97c510127a310a55c424def487474387/6f061d950a7b02081b07b50061d9f2d3562cc801.jpg", true, true);
-
     }
 
     public void callbackJson(){
-//        ajaxMain.ajax("http://bapi.baby-kingdom.com/index.php?mod=misc&op=reportcustom&ver=2.0.0&app=android" ,String.class , new AjaxCallback<String>(){
-//
-//            public void callback(String url, String object, AjaxStatus status) {
-//                Debug.LogE("callback status : "+status.getCode() +"  "+object);
-//                text.setText(object);
-//            }
-//        });
+        ajaxMain.ajax("http://bapi.baby-kingdom.com/index.php?mod=misc&op=reportcustom&ver=2.0.0&app=android" ,String.class , new AjaxCallback<String>(){
 
-        String im = "http://www.baby-kingdom.com/static/image/smiley/default/bb72.gif";
-        ajaxMain.findView(image_src).image(im, false, false, 0, R.mipmap.ic_launcher);
+            public void callback(String url, String object, AjaxStatus status) {
+                if (TextUtils.isEmpty(object)){
+                    text.setText("没有数据");
+                    return;
+                }
+              Debug.LogE(object);
+
+              try {
+                  JSONObject jsonObject = new JSONObject(object);
+                  ReportBean bean = FLJson.get(jsonObject , ReportBean.class);
+
+                  String str = "";
+                  for (ReportBean.Data data : bean.getData()){
+                      str += data.getStr() +"\n";
+                  }
+
+                  text.setText(str);
+              }catch (Exception e){
+                  e.printStackTrace();
+              }
+
+            }
+        });
+
     }
 
     @Override
     public void widgetClick(View v) {
         switch (v.getId()){
             case R.id.btn_back:
-//                finish();
                 callbackJson();
                 break;
 
