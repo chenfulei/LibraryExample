@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ *  使用说明: 所有属性和内部类的名称跟api上是一致的
+ *
  *  解析json
  *
  * Created by chen_fulei on 2015/8/21.
