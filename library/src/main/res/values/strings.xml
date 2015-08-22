@@ -5,4 +5,14 @@
     <string name="action_settings">Settings</string>
 
     <string name="app_carshhandler_toat">将在1秒内重启程序</string>
+    <string name="loading">正在加載中</string>
+
+    <!-- 下拉刷新和上拉加载更多的文本 -->
+    <string name="pull_to_refresh_header_hint_loading">@string/loading</string>
+    <string name="pushmsg_center_no_more_msg">已經最後一頁了</string>
+    <string name="pushmsg_center_pull_down_text">下拉可以刷新</string>
+    <string name="pushmsg_center_pull_up_text">上拉可以刷新</string>
+    <string name="pushmsg_center_pull_release_text">鬆開獲取更多</string>
+    <string name="pushmsg_center_pull_release_refresh">鬆開後刷新</string>
+    <string name="pushmsg_center_pull_down_update_time">最後更新時間：</string>
 </resources>

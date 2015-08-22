@@ -145,7 +145,14 @@ public abstract class FLLoadingLayout extends FrameLayout implements FLLoading{
     @Override
     public abstract int getContentSize();
 
-
+    /**
+     * 得到前一个状态
+     *
+     * @return 状态
+     */
+    protected FLLoadState getPreState() {
+        return mPreState;
+    }
     /**
      * 当状态改变时调用
      *
