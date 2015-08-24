@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <color name="white">#FFFFFF</color>
+
     <color name="btn_pressed">#7EDDE0</color>
     <color name="btn_unpressed">#FFFFFF</color>
+
+    <drawable name="more_relative_selected">#33A1A1A1</drawable>
+    <drawable name="more_relative_normal">#ffffff</drawable>
 
 </resources>
