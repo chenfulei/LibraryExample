@@ -7,6 +7,13 @@ package com.library.utils;
  */
 public class FLSystemUtils {
 
+    /**
+     * 获取手机SDK版本
+     * @return
+     */
+    public static int getSDKVersion(){
+        return android.os.Build.VERSION.SDK_INT;
+    }
 
     /**
      * 比较两个时间的是否在间隔时间内

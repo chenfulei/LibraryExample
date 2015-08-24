@@ -77,4 +77,8 @@ public class Debug {
             Log.w(tag, message);
         }
     }
+
+    public static void Log(String msg, Object... format) {
+        Log(String.format(msg, format));
+    }
 }

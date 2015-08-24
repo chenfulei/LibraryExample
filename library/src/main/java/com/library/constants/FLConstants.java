@@ -9,7 +9,7 @@ public class FLConstants {
 
     public static boolean isAnim = true; // 是否开启activity跳转动画
     public static String isAnimDirection = "right"; // right left
-
+    public static String cacheFolder = "FL";
 
 
     /********************callback 请求中需要的常量 start***************************/
