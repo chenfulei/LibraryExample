@@ -6,9 +6,9 @@ import android.graphics.Color;
 import com.library.R;
 
 /**
- *  -.- 类似IOS7选择器的模样
- * @author zl.lin
+ * 类似IOS7选择器的模样
  *
+ * Created by chen_fulei on 2015/8/4.
  */
 public class WheelViewiOS7 extends WheelView {
 

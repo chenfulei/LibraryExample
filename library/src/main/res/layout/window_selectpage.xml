@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+     >
+	<!-- android:background="#b4000000" -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true" >
+
+        <include
+            android:id="@+id/head"
+            layout="@layout/window_head" />
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/head"
+            android:background="#ffffff"
+            android:paddingBottom="@dimen/inc_span_half"
+            android:paddingLeft="@dimen/inc_span"
+            android:paddingRight="@dimen/inc_span"
+            android:paddingTop="@dimen/inc_span_half" >
+
+            <com.hc.wheel.WheelView
+                android:id="@+id/wheel_page"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_marginRight="@dimen/inc_span" />
+				<!-- android:layout_width="@dimen/window_weight_width" -->
+            <ImageView
+                android:id="@+id/iv_verline"
+                android:layout_width="1px"
+                android:layout_height="fill_parent"
+                android:layout_alignBottom="@id/wheel_page"
+                android:layout_toRightOf="@id/wheel_page"
+                android:visibility="gone"
+                android:background="#E2E2E2" />
+
+            <RelativeLayout
+                android:id="@+id/rl_unit"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_alignBottom="@id/wheel_page"
+                android:layout_toRightOf="@id/wheel_page"
+                android:visibility="gone" >
+
+                <TextView
+                    android:id="@+id/tv_m"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:text="KG"
+                    android:textColor="#4cb9c1"
+                    />
+            </RelativeLayout>
+        </RelativeLayout>
+    </RelativeLayout>
+
+</RelativeLayout>
