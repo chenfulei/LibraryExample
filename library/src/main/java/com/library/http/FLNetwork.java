@@ -24,7 +24,6 @@ import java.util.Map;
  * Created by chen_fulei on 2015/8/25.
  */
 public class FLNetwork {
-    protected static final boolean DEBUG = FLHttpConfig.DEBUG;
     protected final FLHttpStack mHttpStack;
 
     public FLNetwork(FLHttpStack httpStack) {

@@ -228,9 +228,8 @@ public class FLDiskCache implements FLCache {
         if ((mTotalSize + neededSpace) < mMaxCacheSizeInBytes) {
             return;
         }
-        if (FLHttpConfig.DEBUG) {
-            Debug.Log("Pruning old cache entries.");
-        }
+
+        Debug.Log("Pruning old cache entries.");
 
         long before = mTotalSize;
         int prunedFiles = 0;
@@ -258,11 +257,9 @@ public class FLDiskCache implements FLCache {
             }
         }
 
-        if (FLHttpConfig.DEBUG) {
-            Debug.Log("pruned %d files, %d bytes, %d ms", prunedFiles,
-                    (mTotalSize - before), SystemClock.elapsedRealtime()
-                            - startTime);
-        }
+        Debug.Log("pruned %d files, %d bytes, %d ms", prunedFiles,
+                (mTotalSize - before), SystemClock.elapsedRealtime()
+                        - startTime);
     }
 
     /**

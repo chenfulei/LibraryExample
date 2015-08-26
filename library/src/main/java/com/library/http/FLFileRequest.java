@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 /**
+ * 文件请求
+ *
  * Created by chen_fulei on 2015/8/25.
  */
 public class FLFileRequest extends FLRequest<byte[]> {

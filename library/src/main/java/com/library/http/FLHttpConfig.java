@@ -15,8 +15,6 @@ import java.io.File;
  */
 public class FLHttpConfig {
 
-    public static boolean DEBUG = true;
-
     /** 缓存文件夹 **/
     public static String CACHEPATH = FLConstants.cacheFolder+"/cache";
     /** 线程池大小 **/
