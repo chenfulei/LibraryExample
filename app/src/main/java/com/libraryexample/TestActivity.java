@@ -8,8 +8,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.library.FLJson;
-import com.library.callback.AjaxCallback;
-import com.library.callback.AjaxStatus;
+import com.library.callback.FLAjaxCallback;
+import com.library.callback.FLAjaxStatus;
 import com.library.ui.FLActivity;
 import com.library.ui.FLBindView;
 import com.library.utils.Debug;
@@ -51,9 +51,9 @@ public class TestActivity extends FLActivity {
     }
 
     public void callbackJson(){
-        ajaxMain.ajax("http://bapi.baby-kingdom.com/index.php?mod=misc&op=reportcustom&ver=2.0.0&app=android" ,String.class , new AjaxCallback<String>(){
+        ajaxMain.ajax("http://bapi.baby-kingdom.com/index.php?mod=misc&op=reportcustom&ver=2.0.0&app=android" ,String.class , new FLAjaxCallback<String>(){
 
-            public void callback(String url, String object, AjaxStatus status) {
+            public void callback(String url, String object, FLAjaxStatus status) {
                 if (TextUtils.isEmpty(object)){
                     text.setText("没有数据");
                     return;

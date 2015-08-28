@@ -1,6 +1,5 @@
 package com.libraryexample.fragment;
 
-import android.content.Entity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -11,8 +10,6 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.library.callback.AjaxCallback;
-import com.library.callback.AjaxStatus;
 import com.library.ui.FLBindView;
 import com.library.ui.FLFragment;
 import com.libraryexample.R;
@@ -22,7 +19,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.CoreConnectionPNames;
-import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 
 /**

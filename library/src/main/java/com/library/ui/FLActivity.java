@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 
-import com.library.AjaxMain;
+import com.library.FLAjaxMain;
 import com.library.R;
 import com.library.constants.FLConstants;
 import com.library.utils.Debug;
@@ -21,13 +21,13 @@ public abstract class FLActivity extends FLFragmentActivity {
     public Activity activity;
 
     protected Handler mHandler;
-    protected AjaxMain ajaxMain; // 异步网络请求等入口
+    protected FLAjaxMain ajaxMain; // 异步网络请求等入口
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         activity = this;
         FLActivityManager.getInstance().add(this);
-        ajaxMain = new AjaxMain(this);
+        ajaxMain = new FLAjaxMain(this);
 
         initHandler();
         Debug.Log(getClass().getName(), "onCreate");

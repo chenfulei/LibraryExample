@@ -2,7 +2,7 @@ package com.library;
 
 import android.app.Application;
 
-import com.library.callback.BitmapAjaxCallback;
+import com.library.callback.FLBitmapAjaxCallback;
 
 /**
  * application
@@ -14,6 +14,6 @@ public class BaseApplication extends Application{
 
     @Override
     public void onLowMemory() {
-        BitmapAjaxCallback.clearCache();
+        FLBitmapAjaxCallback.clearCache();
     }
 }
