@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
+ /**
  *本类工作流程： 每当发起一次Request，会对这个Request标记一个唯一值。<br>
  * 并加入当前请求的Set中(保证唯一;方便控制)。<br>
  * 同时判断是否启用缓存，若启用则加入缓存队列，否则加入执行队列。<br>
@@ -342,51 +342,8 @@ public class FLHttp {
         mConfig.mCache.clear();
     }
 
-    /**
-     * 已过期，请更换为getCache()
-     */
-    @Deprecated
-    public String getCache(String uri, FLHttpParams params) {
-        if (params != null) {
-            uri += params.getUrlParams();
-        }
-        return new String(getCache(uri));
-    }
-
-    /**
-     * 已过期，请更换为cleanCache()
-     */
-    @Deprecated
-    public void removeAllDiskCache() {
-        cleanCache();
-    }
-
-    /**
-     * 已过期，请更换为removeCache()
-     */
-    @Deprecated
-    public void removeDiskCache(String uri, FLHttpParams params) {
-        mConfig.mCache.remove(uri);
-    }
-
-    /**
-     * 已过期，请更换为getConfig()
-     */
-    @Deprecated
-    public FLHttpConfig getHttpConfig() {
-        return getConfig();
-    }
-
     public FLHttpConfig getConfig() {
         return mConfig;
-    }
-
-    /**
-     * 已过期，请更换为setConfig()
-     */
-    @Deprecated
-    public void setHttpConfig(FLHttpConfig config) {
-        setConfig(config);
     }
 
     public void setConfig(FLHttpConfig config) {

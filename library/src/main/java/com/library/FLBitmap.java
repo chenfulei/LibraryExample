@@ -33,6 +33,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
+ * 图片加载
+ *
  * Created by chen_fulei on 2015/8/26.
  */
 public class FLBitmap {
@@ -330,14 +332,6 @@ public class FLBitmap {
      */
     public void removeCache(String url) {
         FLBitmapConfig.mCache.remove(url);
-    }
-
-    /**
-     * 已过期，请改用cleanCache()
-     */
-    @Deprecated
-    public void removeCacheAll() {
-        cleanCache();
     }
 
     /**
