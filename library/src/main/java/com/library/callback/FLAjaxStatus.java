@@ -1,0 +1,346 @@
+package com.library.callback;
+
+import org.apache.http.Header;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.protocol.HttpContext;
+
+import java.io.Closeable;
+import java.io.File;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+/**
+ * ajax 网络请求的实时状态
+ * AjaxStatus contains meta information of an AjaxCallback callback.
+ * <p/>
+ * Created by chen_fulei on 2015/7/28.
+ */
+public class FLAjaxStatus {
+    /**
+     * Source NETWORK.
+     */
+    public static final int NETWORK = 1;
+
+    /**
+     * Source DATASTORE.
+     */
+    public static final int DATASTORE = 2;
+
+    /**
+     * Source FILE.
+     */
+    public static final int FILE = 3;
+
+    /**
+     * Source MEMORY.
+     */
+    public static final int MEMORY = 4;
+
+    /**
+     * Source DEVICE.
+     */
+    public static final int DEVICE = 5;
+
+    public static final int NETWORK_ERROR = -101;
+    public static final int AUTH_ERROR = -102;
+    public static final int TRANSFORM_ERROR = -103;
+
+
+    private int code = 200;
+    private String message = "OK";
+    private String redirect;
+    private byte[] data;
+    private File file;
+    private Date time = new Date();
+    private boolean refresh;
+    private DefaultHttpClient client;
+    private long duration;
+    private int source = NETWORK;
+    private long start = System.currentTimeMillis();
+    private boolean done;
+    private boolean invalid;
+    private boolean reauth;
+    private String error;
+    private HttpContext context;
+    private Header[] headers;
+    private Closeable close;
+
+    public FLAjaxStatus() {
+    }
+
+    public FLAjaxStatus(int code, String message) {
+        this.code = code;
+        this.message = message;
+    }
+
+    public FLAjaxStatus source(int source) {
+        this.source = source;
+        return this;
+    }
+
+    public FLAjaxStatus code(int code) {
+        this.code = code;
+        return this;
+    }
+
+    public FLAjaxStatus error(String error) {
+        this.error = error;
+        return this;
+    }
+
+    public FLAjaxStatus message(String message) {
+        this.message = message;
+        return this;
+    }
+
+    public FLAjaxStatus redirect(String redirect) {
+        this.redirect = redirect;
+        return this;
+    }
+
+    public FLAjaxStatus context(HttpContext context) {
+        this.context = context;
+        return this;
+    }
+
+    public FLAjaxStatus time(Date time) {
+        this.time = time;
+        return this;
+    }
+
+    public FLAjaxStatus refresh(boolean refresh) {
+        this.refresh = refresh;
+        return this;
+    }
+
+    public FLAjaxStatus reauth(boolean reauth) {
+        this.reauth = reauth;
+        return this;
+    }
+
+    public FLAjaxStatus client(DefaultHttpClient client) {
+        this.client = client;
+        return this;
+    }
+
+    public FLAjaxStatus headers(Header[] headers) {
+        this.headers = headers;
+        return this;
+    }
+
+    public FLAjaxStatus done() {
+        this.duration = System.currentTimeMillis() - start;
+        this.done = true;
+        this.reauth = false;
+        return this;
+    }
+
+    public FLAjaxStatus reset() {
+        this.duration = System.currentTimeMillis() - start;
+        this.done = false;
+        close();
+        return this;
+    }
+
+    public void closeLater(Closeable c) {
+        this.close = c;
+    }
+
+    /**
+     * Close any opened inputstream associated with the response. Call this method when finish parsing the response of a synchronous call.
+     */
+
+    public void close() {
+        FLAjaxUtility.close(close);
+        close = null;
+    }
+
+    public FLAjaxStatus data(byte[] data) {
+        this.data = data;
+        return this;
+    }
+
+    public FLAjaxStatus file(File file) {
+        this.file = file;
+        return this;
+    }
+
+    public FLAjaxStatus invalidate() {
+        this.invalid = true;
+        return this;
+    }
+
+    public boolean getDone() {
+        return done;
+    }
+
+    public boolean getReauth() {
+        return reauth;
+    }
+
+    public boolean getInvalid() {
+        return invalid;
+    }
+
+    /**
+     * Gets the http response code.
+     * <p/>
+     * Can be also be NETWORK_ERROR, AUTH_ERROR, or TRANSFORM_ERROR.
+     *
+     * @return code
+     */
+    public int getCode() {
+        return code;
+    }
+
+    /**
+     * Gets the http response message.
+     *
+     * @return message
+     */
+    public String getMessage() {
+        return message;
+    }
+
+    /**
+     * Gets the redirected url. Returns original url if no redirection.
+     *
+     * @return redirect url
+     */
+    public String getRedirect() {
+        return redirect;
+    }
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public File getFile() {
+        return file;
+    }
+
+    /**
+     * Gets the object fetched time. Returns original fetch time when url is file cached.
+     *
+     * @return original fetch time
+     */
+    public Date getTime() {
+        return time;
+    }
+
+    /**
+     * Gets the refresh param.
+     *
+     * @return refresh
+     */
+    public boolean getRefresh() {
+        return refresh;
+    }
+
+    /**
+     * Gets the http client used to fetch the url. User can access other resources like response headers and cookies.
+     * Returns null if object is cached (source is not AjaxStatus.NETWORK).
+     *
+     * @return http client
+     */
+    public DefaultHttpClient getClient() {
+        return client;
+    }
+
+    /**
+     * Gets the duration of the ajax request in millseconds.
+     *
+     * @return duration
+     */
+    public long getDuration() {
+        return duration;
+    }
+
+    /**
+     * Gets the source type. Can be AjaxStatus.NETWORK, AjaxStatus.DATASTORE, AjaxStatus.FILE, or AjaxStatus.MEMORY.
+     *
+     * @return source
+     */
+    public int getSource() {
+        return source;
+    }
+
+    /**
+     * Gets the error response as a string. For http response code that's not 200-299.
+     *
+     * @return source
+     */
+    public String getError() {
+        return error;
+    }
+
+    /**
+     * Test if the response is expired against current time, given the expire duration in milliseconds.
+     * If the ajax source is NETWORK, it's never considered expired.
+     *
+     * @return expire Expire duration in milliseconds.
+     */
+
+    public boolean expired(long expire) {
+
+        long mod = time.getTime();
+        long now = System.currentTimeMillis();
+        long diff = now - mod;
+
+        return diff > expire && getSource() != NETWORK;
+
+    }
+
+
+    /**
+     * Return the cookies set by the server.
+     * <p/>
+     * Return values only when source is not from cache (source == NETWORK), returns empty list otherwise.
+     *
+     * @return cookies
+     */
+
+    public List<Cookie> getCookies() {
+
+        if (context == null) return Collections.emptyList();
+        CookieStore store = (CookieStore) context.getAttribute(ClientContext.COOKIE_STORE);
+        if (store == null) return Collections.emptyList();
+
+        return store.getCookies();
+    }
+
+
+    /**
+     * Return the http response headers.
+     * <p/>
+     * Return values only when source is not from cache (source == NETWORK), returns empty list otherwise.
+     *
+     * @return cookies
+     */
+
+    public List<Header> getHeaders() {
+
+        if (headers == null) return Collections.emptyList();
+        return Arrays.asList(headers);
+
+    }
+
+    public String getHeader(String name) {
+
+        if (headers == null) return null;
+
+        for (int i = 0; i < headers.length; i++) {
+            if (name.equalsIgnoreCase(headers[i].getName())) {
+                return headers[i].getValue();
+            }
+        }
+
+        return null;
+    }
+
+}
