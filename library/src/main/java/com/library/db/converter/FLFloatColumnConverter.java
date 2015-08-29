@@ -6,11 +6,10 @@ import android.text.TextUtils;
 import com.library.db.sqlite.FLColumnDbType;
 
 /**
- * Author: wyouflf
- * Date: 13-11-4
- * Time: 下午10:51
+ *
+ *Created by chen_fulei on 2015/8/29.
  */
-public class FloatColumnConverter implements FLColumnConverter<Float> {
+public class FLFloatColumnConverter implements FLColumnConverter<Float> {
     @Override
     public Float getFieldValue(final Cursor cursor, int index) {
         return cursor.isNull(index) ? null : cursor.getFloat(index);

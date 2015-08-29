@@ -6,11 +6,9 @@ import android.text.TextUtils;
 import com.library.db.sqlite.FLColumnDbType;
 
 /**
- * Author: wyouflf
- * Date: 13-11-4
- * Time: 下午10:51
+ * Created by chen_fulei on 2015/8/29.
  */
-public class IntegerColumnConverter implements FLColumnConverter<Integer> {
+public class FLIntegerColumnConverter implements FLColumnConverter<Integer> {
     @Override
     public Integer getFieldValue(final Cursor cursor, int index) {
         return cursor.isNull(index) ? null : cursor.getInt(index);

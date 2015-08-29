@@ -8,11 +8,9 @@ import com.library.db.sqlite.FLColumnDbType;
 import java.sql.Date;
 
 /**
- * Author: wyouflf
- * Date: 13-11-4
- * Time: 下午10:51
+ *Created by chen_fulei on 2015/8/29.
  */
-public class SqlDateColumnConverter implements FLColumnConverter<Date> {
+public class FLSqlDateColumnConverter implements FLColumnConverter<Date> {
     @Override
     public java.sql.Date getFieldValue(final Cursor cursor, int index) {
         return cursor.isNull(index) ? null : new java.sql.Date(cursor.getLong(index));
