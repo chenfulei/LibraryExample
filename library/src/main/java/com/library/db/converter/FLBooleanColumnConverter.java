@@ -3,12 +3,12 @@ package com.library.db.converter;
 import android.database.Cursor;
 import android.text.TextUtils;
 
-import com.library.db.sqlite.ColumnDbType;
+import com.library.db.sqlite.FLColumnDbType;
 
 /**
  * Created by chen_fulei on 2015/8/28.
  */
-public class BooleanColumnConverter implements ColumnConverter<Boolean>{
+public class FLBooleanColumnConverter implements FLColumnConverter<Boolean> {
 
     @Override
     public Boolean getFieldValue(final Cursor cursor, int index) {
@@ -28,8 +28,8 @@ public class BooleanColumnConverter implements ColumnConverter<Boolean>{
     }
 
     @Override
-    public ColumnDbType getColumnDbType() {
-        return ColumnDbType.INTEGER;
+    public FLColumnDbType getColumnDbType() {
+        return FLColumnDbType.INTEGER;
     }
 
 }

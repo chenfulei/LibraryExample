@@ -2,12 +2,12 @@ package com.library.db.converter;
 
 import android.database.Cursor;
 
-import com.library.db.sqlite.ColumnDbType;
+import com.library.db.sqlite.FLColumnDbType;
 
 /**
  * Created by chen_fulei on 2015/8/28.
  */
-public class ByteArrayColumnConverter implements ColumnConverter<byte[]>{
+public class FLByteArrayColumnConverter implements FLColumnConverter<byte[]> {
 
     @Override
     public byte[] getFieldValue(final Cursor cursor, int index) {
@@ -25,8 +25,8 @@ public class ByteArrayColumnConverter implements ColumnConverter<byte[]>{
     }
 
     @Override
-    public ColumnDbType getColumnDbType() {
-        return ColumnDbType.BLOB;
+    public FLColumnDbType getColumnDbType() {
+        return FLColumnDbType.BLOB;
     }
 
 }
