@@ -3,6 +3,8 @@ package com.library.ui;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 
 import com.library.FLAjaxMain;
 import com.library.R;
@@ -19,6 +21,7 @@ public abstract class FLFragment extends FLFrameFragment {
     public Activity activity;
     protected FLAjaxMain ajaxMain; // 异步网络请求等入口
 
+    protected Handler mHandler;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -27,7 +30,30 @@ public abstract class FLFragment extends FLFrameFragment {
 
         activity = getActivity();
         super.onCreate(savedInstanceState);
+
+        initHandler();
     }
+
+    /**
+     * 初始化Handler
+     */
+    private void initHandler() {
+        mHandler = new Handler() {
+
+            @Override
+            public void handleMessage(Message msg) {
+                onHeadler(msg);
+                super.handleMessage(msg);
+            }
+        };
+    }
+
+    /**
+     * 处理消息结果
+     *
+     * @param msg
+     */
+    protected abstract void onHeadler(Message msg);
 
     @Override
     public void onResume() {
