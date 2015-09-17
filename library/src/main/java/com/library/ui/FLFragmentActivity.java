@@ -15,7 +15,7 @@ import com.library.utils.FLSystemUtils;
  * <p/>
  * Created by chen_fulei on 2015/7/16.
  */
-public abstract class FLFragmentActivity extends FragmentActivity implements View.OnClickListener, FLBroadcast, FLBaseAct, FLSkipActivity {
+public abstract class FLFragmentActivity extends FragmentActivity implements View.OnClickListener, FLBroadcast, FLBaseAct, FLSkipActivity , FLCallBack{
 
     public static long lastClickTime = 0; // 记录控件点击的时间
     public static long space = 500; // 控件点击之间间隔时间 300毫秒
@@ -81,6 +81,16 @@ public abstract class FLFragmentActivity extends FragmentActivity implements Vie
     public void unRegisterBroadcast() {
     }
 
+    @Override
+    public void callBack(Bundle bundle) {
+        //用于Activity和Fragment间的交互
+        /*
+        *   Bundle bundle = new Bundle();
+        *   bundle.putInt("category", 22);
+        *   callBack.callBack(bundle);
+        * */
+    }
+
     /**
      * fragment的时候切换 (每次切换到要刷新)
      *
@@ -109,7 +119,7 @@ public abstract class FLFragmentActivity extends FragmentActivity implements Vie
                 transaction.setCustomAnimations(R.anim.slide_in_fade, R.anim.slide_out_fade);
             }
 
-            transaction.add(resView, flFragment).commit();
+            transaction.add(resView, flFragment).commitAllowingStateLoss();
         } catch (Exception e) {
             Debug.Log(e);
         }
@@ -138,10 +148,10 @@ public abstract class FLFragmentActivity extends FragmentActivity implements Vie
                         transaction.setCustomAnimations(R.anim.slide_in_fade, R.anim.slide_out_fade);
                     }
 
-                    transaction.hide(currentFragment).add(resView, nextFragment).commit();
+                    transaction.hide(currentFragment).add(resView, nextFragment).commitAllowingStateLoss();
                 } else {
                     // 隐藏当前的fragment，显示下一个
-                    transaction.hide(currentFragment).show(nextFragment).commit();
+                    transaction.hide(currentFragment).show(nextFragment).commitAllowingStateLoss();
                 }
 
                 currentFragment = nextFragment;

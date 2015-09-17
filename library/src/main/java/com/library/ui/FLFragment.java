@@ -22,6 +22,8 @@ public abstract class FLFragment extends FLFrameFragment {
     protected FLAjaxMain ajaxMain; // 异步网络请求等入口
 
     protected Handler mHandler;
+    //fragment之间切换 传递category 识别 fragment
+    protected FLCallBack callBack;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -32,6 +34,12 @@ public abstract class FLFragment extends FLFrameFragment {
         super.onCreate(savedInstanceState);
 
         initHandler();
+    }
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        callBack = (FLCallBack) activity;
     }
 
     /**
