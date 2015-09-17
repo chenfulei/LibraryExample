@@ -1,12 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <color name="white">#FFFFFF</color>
-
     <color name="btn_pressed">#7EDDE0</color>
     <color name="btn_unpressed">#FFFFFF</color>
 
     <drawable name="more_relative_selected">#33A1A1A1</drawable>
     <drawable name="more_relative_normal">#ffffff</drawable>
+
+    <color name="pos_grey_shallow">#F2F2F2</color> <!-- 浅灰色-->
+    <color name="pos_grey_deep">#666666</color> <!--深灰色-->
+    <color name="pos_blue_shallow">#33CCFF</color> <!--浅蓝色-->
+    <color name="pos_blue_shallow2">#00B2EE</color> <!--浅蓝色 按钮按下去的效果-->
+    <color name="pos_content_orange">#F8C77D</color> <!-- 浅橙色 -->
+    <color name="pos_aqua_shallow">#00ffff</color> <!--浅绿色-->
+
+    <color name="white">#FFFFFF</color><!--白色 -->
+    <color name="yellow">#FFFF00</color><!--黄色 -->
+    <color name="pink">#FFC0CB</color><!--粉红色 -->
+    <color name="orange">#FFA500</color><!--橙色 -->
+    <color name="red">#FF0000</color><!--红色 -->
+    <color name="beige">#F5F5DC</color><!--米色 -->
+    <color name="wheat">#F5DEB3</color><!--浅黄色 -->
+    <color name="gray">#CCCCCC</color><!--灰色 -->
+    <color name="purple">#800080</color><!--紫色 -->
+    <color name="aqua">#00FFFF</color><!--浅绿色 -->
+    <color name="blue">#0000FF</color><!--蓝色 -->
+    <color name="black">#000000</color><!--黑色 -->
+    <color name="green">#008000</color><!--绿色 -->
 
 </resources>
