@@ -163,13 +163,21 @@ public class FLJson {
                                     JSONArray array = json.getJSONArray(arrays.getString(i));
                                     List<Object> list = null;
 
-                                    //is JSONArray
-                                    for (Class<?> _class : t_class){
-                                        if (methodName.equals(_class.getSimpleName())){
-                                            list = new ArrayList<Object>();
-                                            for (int num = 0 ;num < array.length() ; num++){
-                                                Object arrayClass = get(array.getJSONObject(num) , _class);
-                                                list.add(arrayClass);
+                                    if(t_class.length <=0){
+                                        //这个是数组 比如字符串数组["" ,"" , ""]
+                                        list = new ArrayList<Object>();
+                                        for (int arrayNum = 0; arrayNum < array.length(); arrayNum++) {
+                                            list.add(array.get(arrayNum));
+                                        }
+                                    }else{
+                                        //is JSONArray
+                                        for (Class<?> _class : t_class){
+                                            if (methodName.equals(_class.getSimpleName())){
+                                                list = new ArrayList<Object>();
+                                                for (int num = 0 ;num < array.length() ; num++){
+                                                    Object arrayClass = get(array.getJSONObject(num) , _class);
+                                                    list.add(arrayClass);
+                                                }
                                             }
                                         }
                                     }
