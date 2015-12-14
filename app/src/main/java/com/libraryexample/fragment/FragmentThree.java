@@ -1,6 +1,7 @@
 package com.libraryexample.fragment;
 
 import android.os.Bundle;
+import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,5 +34,10 @@ public class FragmentThree extends FLFragment {
     protected void initData() {
         super.initData();
         textView.setText("this is FragmentThree!");
+    }
+
+    @Override
+    protected void onHeadler(Message msg) {
+
     }
 }

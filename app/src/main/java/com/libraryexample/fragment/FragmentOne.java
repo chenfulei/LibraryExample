@@ -104,4 +104,8 @@ public class FragmentOne extends FLFragment {
         return client.execute(get);
     }
 
+    @Override
+    protected void onHeadler(Message msg) {
+
+    }
 }
